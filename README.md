@@ -1,161 +1,150 @@
 # NeoNote.nvim
 
-A Neovim plugin for seamless integration with NeoNote API, enabling automatic synchronization of markdown files with your note-taking backend.
+NeoNote syncs your markdown notes from Neovim to NeoNote cloud, so your thoughts are always safe, organized, and accessible.
 
-## Features
+<!-- Optional: Add a cool GIF of the plugin in action here! -->
 
-- **Frontmatter-based syncing**: Use YAML frontmatter to manage note synchronization instead of rigid filename requirements
-- **Auto-sync on save**: Automatically syncs any markdown file with `neonote:` frontmatter when saved
-- **Smart note creation**: Create new notes directly from existing markdown files
-- **Bi-directional sync**: Push local changes to API and pull updates from API
+## Why You'll Love NeoNote
 
-## Installation
+- **Effortless Syncing**: Just add `neonote:` to your file's frontmatter. The plugin handles the rest, automatically syncing on save.
+- **Your Notes, Your Way**: No more rigid folder structures or naming conventions. Organize your markdown files however you like, anywhere on your system.
+- **Never Lose a Thought**: With bi-directional sync, your notes are always up-to-date, whether you edit them locally in Neovim.
 
-### Using lazy.nvim
+## Quick Start: Sync Your First Note in Minutes
+
+Get up and running with NeoNote in three simple steps.
+
+### 1. Install the Plugin
+
+Use your favorite plugin manager. With `lazy.nvim`:
 
 ```lua
 {
   "lsshawn/neonote.nvim",
   config = function()
     require("neonote").setup({
-      api_url = "http://api-neonote.cupbots.com",
+      -- Get your API key from your NeoNote account dashboard
+      api_url = "https://api-neonote.cupbots.com",
       api_key = "your-64-character-api-key-here",
-      auto_save = true,
-      notifications = true,
     })
   end,
 }
 ```
 
-## Configuration
+*Don't have an account? [Sign up for NeoNote now!](https://api-neonote.cupbots.com)*
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `api_url` | string | `""` | Your NeoNote API endpoint URL |
-| `api_key` | string | `""` | Your API authentication key |
-| `auto_save` | boolean | `true` | Enable automatic sync on file save |
-| `notifications` | boolean | `true` | Show success/error notifications |
+### 2. Tag a Note for Syncing
 
-## How It Works
+Open any markdown (`.md`) file and add `neonote:` to its YAML frontmatter. If you don't have frontmatter, just add it to the top of the file:
 
-### Frontmatter-Based Syncing
-
-The plugin uses YAML frontmatter to manage note synchronization. Add a `neonote:` field to your markdown files:
-
-#### New Note (will create a new note on save)
 ```markdown
 ---
-title: "My Important Note"
+title: "My Brilliant Idea"
 neonote:
 ---
 
-Your markdown content...
+This is where the magic happens.
 ```
 
-When you save this file, the plugin will:
-1. Create a new note via the API
-2. Update the frontmatter with the returned note ID
-3. Future saves will update the existing note
+### 3. Save and Sync!
 
-#### Existing Note (will update note ID 123 on save)
+Save the file (`:w`). That's it! NeoNote.nvim automatically:
+1. Creates a new note in your NeoNote account.
+2. Updates the frontmatter with the new note's unique ID.
+
+Your file's frontmatter will now look like this, ready for future updates:
+
 ```markdown
 ---
-neonote: 123
-title: "My Important Note" 
+title: "My Brilliant Idea"
+neonote: 12345
 ---
-# My Important Note
 
-This is my updated note content...
+This is where the magic happens.
 ```
 
-### File Organization
+Future saves will automatically sync your changes to the cloud.
 
-- Only `.md` files with `neonote:` frontmatter are processed
-- Files without `neonote:` frontmatter are ignored (not synced)
-- File naming doesn't matter as long as it's a `.md` file
-- Files can be located **anywhere** on your system - no folder restrictions!
+## The Magic of Frontmatter
+
+NeoNote uses a simple `neonote` key in your YAML frontmatter to manage everything.
+
+- **To create a new note**: Leave the `neonote:` key blank.
+  ```yaml
+  ---
+  neonote:
+  ---
+  ```
+- **To link an existing note**: Use the note's ID. The plugin handles this for you automatically after the first sync.
+  ```yaml
+  ---
+  neonote: 12345
+  ---
+  ```
+
+Any `.md` file *without* the `neonote:` key is simply ignored, giving you full control over what you sync.
 
 ## Commands
 
+Take control of your workflow with these powerful commands:
+
 | Command | Description |
 |---------|-------------|
-| `:NeoNoteSync` | Manually sync current file |
-| `:NeoNoteRefresh` | Refresh current note from API |
-| `:NeoNoteStatus` | Check API connection status |
+| `:NeoNoteSync` | Manually sync the current file with the NeoNote cloud. |
+| `:NeoNoteRefresh` | Pull the latest version of the note from the cloud, overwriting local changes. |
+| `:NeoNoteStatus` | Check your connection to the NeoNote API. |
 
-## Keymaps (Optional)
+### Recommended Keymaps
 
-Add these to your Neovim config:
+For an even smoother experience, add these keymaps to your Neovim config:
 
 ```lua
-vim.keymap.set("n", "<leader>ns", ":NeoNoteSync<CR>", { desc = "Sync current note" })
-vim.keymap.set("n", "<leader>nr", ":NeoNoteRefresh<CR>", { desc = "Refresh note from API" })
-vim.keymap.set("n", "<leader>nt", ":NeoNoteStatus<CR>", { desc = "Check API status" })
+-- Sync the current note to the cloud
+vim.keymap.set("n", "<leader>ns", ":NeoNoteSync<CR>", { desc = "NeoNote: Sync note" })
+-- Refresh the current note from the cloud
+vim.keymap.set("n", "<leader>nr", ":NeoNoteRefresh<CR>", { desc = "NeoNote: Refresh note" })
+-- Check API connection status
+vim.keymap.set("n", "<leader>nt", ":NeoNoteStatus<CR>", { desc = "NeoNote: API Status" })
 ```
 
-## Starting Fresh
+## Full Configuration
 
-1. Get your API key:
-   ```bash
-   curl -X POST https://api-neonote.cupbots.com \
-     -H "Content-Type: application/json" \
-     -d '{"email": "you@example.com"}'
-   ```
+Customize NeoNote to fit your needs perfectly.
 
-2. Configure the plugin with your API key
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `api_url` | string | `""` | The endpoint for your NeoNote backend. |
+| `api_key` | string | `""` | Your personal API authentication key. |
+| `auto_save` | boolean | `true` | Toggle automatic sync on file save. |
+| `notifications` | boolean | `true` | Show success/error notifications. |
 
-3. Open a `.md` note and add `neonote: ` to its frontmatter:
-   ```markdown
-   ---
-   neonote:
-   ---
-   # My First Note
-   
-   Hello, world!
-   ```
-
-4. Save the file - it will automatically create and get an ID
-
-### Converting Existing Notes
-
-For existing markdown files, use `:NeoNoteCreate` to add them to your synced collection:
-
-1. Open an existing markdown file
-2. Run `:NeoNoteCreate`
-3. The plugin adds frontmatter and creates a new note
-4. Save the file to persist changes
-
-## API Requirements
-
-Your NeoNote API should support these endpoints:
-
-- `POST /api/notes` - Create new note
-- `PUT /api/notes/{id}` - Update existing note  
-- `GET /api/notes/{id}` - Get note by ID
-- `GET /ping` - Health check
-
-Authentication via `X-API-Key` header.
+Here is an example `setup()` call with all options:
+```lua
+require("neonote").setup({
+  api_url = "https://api-neonote.cupbots.com",
+  api_key = "your-64-character-api-key-here",
+  -- Enable automatic syncing on every save.
+  auto_save = true,
+  notifications = true,
+})
+```
 
 ## Troubleshooting
 
-### Files Not Syncing
+Running into issues? Here are a few things to check first.
 
-1. Verify the file has `neonote:` in frontmatter
-2. Check that the file has a `.md` extension
-3. Enable debug mode and check `:messages`
-4. Test API connection with `:NeoNoteStatus`
+- **File Not Syncing?**
+  1. Ensure the file has a `.md` extension.
+  2. Verify the `neonote:` key is present in the frontmatter.
+  3. Check `:messages` for any errors from the plugin.
+  4. Test your API connection with `:NeoNoteStatus`.
 
-### API Connection Issues
+- **API Connection Issues?**
+  1. Double-check your `api_url` and `api_key` in your config.
+  2. Ensure your machine can connect to the `api_url`.
+  3. Check for firewall or network issues that might be blocking the connection.
 
-1. Verify `api_url` and `api_key` in config
-2. Test API directly with curl
-3. Check firewall/network settings
-4. Review debug logs for specific errors
-
-### Frontmatter Parsing Issues
-
-1. Ensure frontmatter uses valid YAML syntax
-2. Check that frontmatter is at the very beginning of the file
-3. Use `---` to delimit frontmatter blocks
-4. Enable debug mode to see parsing results
+- **Frontmatter Problems?**
+  1. Make sure the frontmatter is at the very top of the file.
+  2. Ensure it's valid YAML, enclosed by `---` on the lines before and after.
 
