@@ -79,7 +79,7 @@ function M.extract_neonote_id(content)
 
 	-- Check for frontmatter at the beginning of the file content
 	if not content:match("^" .. start_marker) then
-		return nil, false, content
+		return nil, false, content, {}
 	end
 
 	local fm_start = #start_marker + 1
@@ -87,7 +87,7 @@ function M.extract_neonote_id(content)
 
 	if not fm_end then
 		-- No closing frontmatter tag, treat as no frontmatter
-		return nil, false, content
+		return nil, false, content, {}
 	end
 
 	local frontmatter_text = content:sub(fm_start, fm_end - 1)
@@ -108,11 +108,45 @@ function M.extract_neonote_id(content)
 		neonote_id = tonumber(id_match)
 	end
 
+	-- Extract additional neonote fields
+	local additional_fields = {}
+	
+	-- Extract neonote-tags
+	local tags_match = frontmatter_text:match('"?neonote%-tags"?[ \t]*:[ \t]*([^\r\n]+)')
+	if tags_match then
+		-- Remove quotes if present
+		tags_match = tags_match:match('^"(.*)"$') or tags_match:match("^'(.*)'$") or tags_match
+		-- Split by comma and trim whitespace
+		local tags = {}
+		for tag in tags_match:gmatch("([^,]+)") do
+			tag = tag:match("^%s*(.-)%s*$") -- trim whitespace
+			if tag ~= "" then
+				table.insert(tags, tag)
+			end
+		end
+		additional_fields.tags = tags
+	end
+	
+	-- Extract neonote-is-public
+	local is_public_match = frontmatter_text:match('"?neonote%-is%-public"?[ \t]*:[ \t]*([^\r\n]+)')
+	if is_public_match then
+		-- Remove quotes if present
+		is_public_match = is_public_match:match('^"(.*)"$') or is_public_match:match("^'(.*)'$") or is_public_match
+		-- Trim whitespace and convert to boolean
+		is_public_match = is_public_match:match("^%s*(.-)%s*$")
+		if is_public_match:lower() == "true" then
+			additional_fields.isPublic = true
+		elseif is_public_match:lower() == "false" then
+			additional_fields.isPublic = false
+		end
+	end
+
 	M.log("  - Parsed neonote value: " .. tostring(neonote_id))
 	M.log("  - Has neonote field: " .. tostring(has_neonote_field))
+	M.log("  - Additional fields: " .. vim.inspect(additional_fields))
 
-	-- Return ID (number or nil), whether neonote field exists, and body
-	return neonote_id, has_neonote_field, body
+	-- Return ID (number or nil), whether neonote field exists, body, and additional fields
+	return neonote_id, has_neonote_field, body, additional_fields
 end
 
 -- Update frontmatter with neonote ID

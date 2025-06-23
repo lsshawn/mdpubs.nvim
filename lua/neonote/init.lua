@@ -97,12 +97,13 @@ function M.sync_note(filepath, bufnr)
 	end
 
 	-- Extract neonote ID from frontmatter
-	local note_id, has_neonote_field, body = utils.extract_neonote_id(content)
+	local note_id, has_neonote_field, body, additional_fields = utils.extract_neonote_id(content)
 
 	utils.log("Sync analysis for " .. filepath .. ":")
 	utils.log("  - Has neonote field: " .. tostring(has_neonote_field))
 	utils.log("  - Note ID: " .. tostring(note_id))
 	utils.log("  - Body length: " .. #body)
+	utils.log("  - Additional fields: " .. vim.inspect(additional_fields))
 
 	-- If no neonote field exists, skip syncing
 	if not has_neonote_field then
@@ -125,7 +126,7 @@ function M.sync_note(filepath, bufnr)
 
 	-- Try to update the existing note
 	local file_extension = utils.get_file_extension(filepath)
-	api.update_note(note_id, title, content, file_extension, function(success, response)
+	api.update_note(note_id, title, content, file_extension, additional_fields, function(success, response)
 		if success then
 			utils.notify("Note ID " .. note_id .. " synced successfully")
 			utils.log("Note ID " .. note_id .. " synced successfully")
@@ -152,7 +153,9 @@ function M.create_note_from_existing_file(filepath, title, bufnr)
 
 	local file_extension = utils.get_file_extension(filepath)
 	-- Create note with full content. The content sent to API won't have the ID yet.
-	api.create_note(title, current_content, file_extension, function(success, response)
+	-- Extract additional fields from the current content for the API call
+	local _, _, _, additional_fields = utils.extract_neonote_id(current_content)
+	api.create_note(title, current_content, file_extension, additional_fields, function(success, response)
 		if success and response then
 			local note_id = response.id
 			utils.log("Created new note with ID " .. note_id .. " for " .. filepath)
@@ -199,7 +202,7 @@ function M.create_new_note(title)
 
 	-- Create a note with the initial body content
 	local file_extension = "md" -- New notes are always markdown
-	api.create_note(default_title, body_content, file_extension, function(success, response)
+	api.create_note(default_title, body_content, file_extension, {}, function(success, response)
 		if success and response then
 			local note_id = response.id
 			local watched_folders = config.get("watched_folders")
@@ -251,7 +254,7 @@ function M.refresh_current_note(version)
 		return
 	end
 
-	local note_id, has_neonote_field = utils.extract_neonote_id(content)
+	local note_id, has_neonote_field, _, _ = utils.extract_neonote_id(content)
 	if not has_neonote_field or not note_id then
 		utils.notify("Current file is not a synced note (no neonote ID in frontmatter)", vim.log.levels.WARN)
 		return
@@ -306,7 +309,7 @@ function M.create_from_current_buffer()
 	local content = table.concat(lines, "\n")
 
 	-- Check if it already has a neonote ID
-	local existing_id, has_neonote_field = utils.extract_neonote_id(content)
+	local existing_id, has_neonote_field, _, additional_fields = utils.extract_neonote_id(content)
 	if has_neonote_field and existing_id then
 		utils.notify("Current file already has a neonote ID: " .. existing_id, vim.log.levels.WARN)
 		return
@@ -317,7 +320,7 @@ function M.create_from_current_buffer()
 
 	-- Create a note with the buffer's content
 	local file_extension = utils.get_file_extension(filepath)
-	api.create_note(title, content, file_extension, function(success, response)
+	api.create_note(title, content, file_extension, additional_fields, function(success, response)
 		if success and response then
 			local note_id = response.id
 
