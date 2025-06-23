@@ -56,4 +56,19 @@ published: false
 
 This tests the `"neonote" :` pattern with both quotes and spacing.
 
-The neonote ID should be: 101112 
+The neonote ID should be: 101112
+
+---
+
+And a case with no value:
+
+---
+title: "foo"
+neonote:
+---
+
+# Note with empty neonote field
+
+This should be detected as having the field, but with no ID.
+
+The neonote ID should be: nil

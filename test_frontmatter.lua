@@ -13,7 +13,8 @@ author: Test User
 
 # Test Note with Unquoted Neonote Field
 This is a test.]],
-		expected_id = 123
+		expected_id = 123,
+		expected_has_field = true,
 	},
 	{
 		name = "Quoted neonote field",
@@ -25,7 +26,8 @@ date: "2024-01-15"
 
 # Test Note with Quoted Neonote Field
 This section tests the quoted field.]],
-		expected_id = 456
+		expected_id = 456,
+		expected_has_field = true,
 	},
 	{
 		name = "Unquoted with spacing",
@@ -37,7 +39,8 @@ tags: ["test", "frontmatter"]
 
 # Test Note with Spaced Neonote Field
 This tests spacing.]],
-		expected_id = 789
+		expected_id = 789,
+		expected_has_field = true,
 	},
 	{
 		name = "Quoted with spacing",
@@ -49,7 +52,8 @@ published: false
 
 # Test Note with Quoted Field and Spacing
 Final test case.]],
-		expected_id = 101112
+		expected_id = 101112,
+		expected_has_field = true,
 	},
 	{
 		name = "No neonote field",
@@ -60,8 +64,21 @@ author: Test User
 
 # Regular Note
 This note has no neonote field.]],
-		expected_id = nil
-	}
+		expected_id = nil,
+		expected_has_field = false,
+	},
+	{
+		name = "Neonote field with no value",
+		content = [[---
+title: "foo"
+neonote:
+---
+
+# Note with empty neonote field
+This should be detected as having the field, but with no ID.]],
+		expected_id = nil,
+		expected_has_field = true,
+	},
 }
 
 print("=== NeoNote Frontmatter Detection Test ===\n")
@@ -77,12 +94,7 @@ for i, test_case in ipairs(test_cases) do
 	print(string.format("Has neonote field: %s", tostring(has_neonote_field)))
 	
 	-- Check if test passed
-	local passed = (neonote_id == test_case.expected_id)
-	if test_case.expected_id == nil then
-		passed = passed and not has_neonote_field
-	else
-		passed = passed and has_neonote_field
-	end
+	local passed = (neonote_id == test_case.expected_id) and (has_neonote_field == test_case.expected_has_field)
 	
 	print(string.format("Result: %s", passed and "✓ PASS" or "✗ FAIL"))
 	print()

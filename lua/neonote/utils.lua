@@ -38,13 +38,13 @@ function M.parse_frontmatter(content)
 					if colon_pos then
 						local key_part = line:sub(1, colon_pos - 1):match("^%s*(.-)%s*$")
 						local value_part = line:sub(colon_pos + 1):match("^%s*(.-)%s*$")
-						
+
 						-- Remove quotes from key if present
-						local key = key_part:match('^["\'](.+)["\']$') or key_part
-						
+						local key = key_part:match("^[\"'](.+)[\"']$") or key_part
+
 						-- Handle value (keeping existing logic)
 						local value = value_part or ""
-						
+
 						-- Handle quoted values
 						if value:match('^".*"$') or value:match("^'.*'$") then
 							value = value:sub(2, -2)
@@ -97,13 +97,15 @@ function M.extract_neonote_id(content)
 	M.log("  - Raw frontmatter:\n" .. frontmatter_text)
 
 	-- Check for neonote field within the frontmatter
+	-- First, check if the neonote field exists at all
+	local has_neonote_field = frontmatter_text:match('"?neonote"?%s*:') ~= nil
+
+	-- Then, try to extract a numeric ID from it
 	local id_match = frontmatter_text:match('"?neonote"?%s*:%s*(%d+)')
 	local neonote_id = nil
-	local has_neonote_field = false
 
 	if id_match then
 		neonote_id = tonumber(id_match)
-		has_neonote_field = true
 	end
 
 	M.log("  - Parsed neonote value: " .. tostring(neonote_id))
@@ -253,4 +255,3 @@ function M.parse_error_response(response)
 end
 
 return M
-
