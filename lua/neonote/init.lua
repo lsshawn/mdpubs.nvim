@@ -120,7 +120,7 @@ function M.sync_note(filepath, bufnr)
 	end
 
 	utils.log("Saving note ID " .. note_id .. " from " .. filepath .. "...")
-	utils.notify("Saving note ID " .. note_id .. " from " .. filepath .. ". Please keep this buffer open...")
+	utils.notify("Saving note ID " .. note_id .. ".\nPlease keep this buffer open...")
 
 	-- Try to update the existing note
 	local file_extension = utils.get_file_extension(filepath)
@@ -130,7 +130,7 @@ function M.sync_note(filepath, bufnr)
 			utils.log("Note ID " .. note_id .. " synced successfully")
 		else
 			utils.notify(
-				"Failed to sync note ID " .. note_id .. ": " .. (response or "Unknown error"),
+				"Failed to sync note ID " .. note_id .. ":\n" .. (response or "Unknown error"),
 				vim.log.levels.ERROR
 			)
 			utils.log("Failed to sync note ID " .. note_id .. ": " .. (response or "Unknown error"))
@@ -140,7 +140,7 @@ end
 
 -- Create a new note from an existing file that has neonote field but no ID
 function M.create_note_from_existing_file(filepath, title, bufnr)
-	utils.notify("Creating new note from " .. filepath .. ".  Please keep this buffer open...")
+	utils.notify("Creating new note.\nPlease keep this buffer open...")
 
 	-- Read current file content to send to API
 	local current_content = utils.read_file(filepath)
