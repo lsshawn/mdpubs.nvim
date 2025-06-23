@@ -97,11 +97,11 @@ function M.extract_neonote_id(content)
 	M.log("  - Raw frontmatter:\n" .. frontmatter_text)
 
 	-- Check for neonote field within the frontmatter
-	-- First, check if the neonote field exists at all
-	local has_neonote_field = frontmatter_text:match('"?neonote"?%s*:') ~= nil
+	-- First, check if the neonote field exists at all (using [ \t] to avoid matching newlines)
+	local has_neonote_field = frontmatter_text:match('"?neonote"?[ \t]*:') ~= nil
 
 	-- Then, try to extract a numeric ID from it
-	local id_match = frontmatter_text:match('"?neonote"?%s*:%s*(%d+)')
+	local id_match = frontmatter_text:match('"?neonote"?[ \t]*:[ \t]*(%d+)')
 	local neonote_id = nil
 
 	if id_match then
@@ -117,31 +117,43 @@ end
 
 -- Update frontmatter with neonote ID
 function M.update_frontmatter_id(content, note_id)
-	local frontmatter, body = M.parse_frontmatter(content)
+	-- This function now uses string replacement to avoid reformatting the user's frontmatter.
+	-- It finds the `neonote:` key and replaces the rest of the line with the new ID.
+	-- If the key is not found, it adds it to the top of the frontmatter.
 
-	-- Set the neonote ID
-	frontmatter.neonote = note_id
+	local start_marker = "---\n"
+	local end_marker = "\n---\n"
 
-	-- Rebuild the content with updated frontmatter
-	local new_content = "---\n"
-
-	-- Add neonote first
-	new_content = new_content .. "neonote: " .. note_id .. "\n"
-
-	-- Add other frontmatter fields (except neonote which we already added)
-	for key, value in pairs(frontmatter) do
-		if key ~= "neonote" then
-			if type(value) == "string" and (value:match("%s") or value == "") then
-				new_content = new_content .. key .. ': "' .. value .. '"\n'
-			else
-				new_content = new_content .. key .. ": " .. tostring(value) .. "\n"
-			end
-		end
+	if not content:match("^" .. start_marker) then
+		-- No frontmatter, so we can't update it.
+		-- The calling function should use add_frontmatter_id if this is the desired behavior.
+		return content
 	end
 
-	new_content = new_content .. "---\n" .. body
+	local fm_end_pos = content:find(end_marker, #start_marker + 1, true)
+	if not fm_end_pos then
+		return content -- No closing frontmatter tag
+	end
 
-	return new_content
+	-- The frontmatter text including the markers
+	local frontmatter_part = content:sub(1, fm_end_pos + #end_marker - 1)
+	local body_part = content:sub(fm_end_pos + #end_marker)
+
+	-- Try to replace existing neonote line (using [ \t] to avoid matching newlines)
+	local new_frontmatter_part, count = frontmatter_part:gsub(
+		'("?neonote"?[ \t]*:[ \t]*)[^\r\n]*',
+		"%1" .. tostring(note_id),
+		1
+	)
+
+	if count > 0 then
+		return new_frontmatter_part .. body_part
+	else
+		-- If neonote key was not found, add it after the opening ---
+		local frontmatter_with_id = start_marker .. "neonote: " .. tostring(note_id) .. "\n"
+		local rest_of_frontmatter = frontmatter_part:sub(#start_marker + 1)
+		return frontmatter_with_id .. rest_of_frontmatter .. body_part
+	end
 end
 
 -- Add frontmatter with neonote ID to content that doesn't have frontmatter
