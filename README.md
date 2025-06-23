@@ -82,6 +82,35 @@ NeoNote uses a simple `neonote` key in your YAML frontmatter to manage everythin
   ---
   ```
 
+You can also include these optional fields anywhere in your frontmatter to enhance your notes:
+
+- **`neonote-tags`**: Add comma-separated tags to organize your notes
+  ```yaml
+  ---
+  neonote: 12345
+  neonote-tags: programming, lua, vim, notes
+  ---
+  ```
+
+- **`neonote-is-public`**: Control the visibility of your notes. Your notes can be view publicly via GET 'http://api-neonote.sshawn.com/public.notes/123456' without any API key.
+  ```yaml
+  ---
+  neonote: 12345
+  neonote-is-public: true
+  ---
+  ```
+
+**Complete example** with all optional fields:
+```yaml
+---
+title: "My Project Notes"
+neonote: 12345  
+neonote-tags: project, work, important
+neonote-is-public: false
+author: "Your Name"
+---
+```
+
 Any `.md` file *without* the `neonote:` key is simply ignored, giving you full control over what you sync.
 
 ## Commands
