@@ -110,7 +110,7 @@ function M.sync_note(filepath, bufnr)
 	end
 
 	-- Extract title from filename or first line
-	local title = utils.extract_title(filepath, content)
+	local title = filepath
 
 	-- If neonote field exists but has no ID (empty, null, or missing), create new note
 	if not note_id then
@@ -328,7 +328,7 @@ function M.create_from_current_buffer()
 	end
 
 	-- Extract title from filename or content
-	local title = utils.extract_title(filepath, content)
+	local title = filepath
 
 	-- Create a note with an empty body first to get an ID
 	api.create_note(title, "", function(success, response)
