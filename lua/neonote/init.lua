@@ -1,6 +1,6 @@
-local config = require('neonote.config')
-local api = require('neonote.api')
-local utils = require('neonote.utils')
+local config = require("neonote.config")
+local api = require("neonote.api")
+local utils = require("neonote.utils")
 
 local M = {}
 
@@ -22,7 +22,6 @@ function M.setup(opts)
 	-- Setup user commands
 	M.setup_commands()
 
-	utils.notify("NeoNote plugin loaded successfully")
 	utils.log("NeoNote plugin loaded successfully")
 end
 
@@ -37,10 +36,10 @@ function M.setup_autocommands()
 		pattern = "*.md",
 		callback = function(args)
 			local filepath = args.file
-			utils.log("BufWritePost triggered for: " .. filepath)
+			utils.log("BufWritePost triggered for: " .. filepath .. " (buf: " .. args.buf .. ")")
 
 			-- Sync any .md file that has neonote frontmatter
-			M.sync_note(filepath)
+			M.sync_note(filepath, args.buf)
 		end,
 	})
 
@@ -49,35 +48,41 @@ end
 
 -- Setup user commands
 function M.setup_commands()
-  vim.api.nvim_create_user_command('NeoNoteNew', function(opts)
-    local title = opts.args and opts.args ~= '' and opts.args or nil
-    M.create_new_note(title)
-  end, { nargs = '?' })
-  
-  vim.api.nvim_create_user_command('NeoNoteSync', function()
-    local filepath = vim.api.nvim_buf_get_name(0)
-    if filepath and filepath ~= '' then
-      M.sync_note(filepath)
-    else
-      utils.notify("No file to sync", vim.log.levels.WARN)
-    end
-  end, {})
-  
-  vim.api.nvim_create_user_command('NeoNoteRefresh', function()
-    M.refresh_current_note()
-  end, {})
-  
-  vim.api.nvim_create_user_command('NeoNoteStatus', function()
-    M.check_status()
-  end, {})
-  
-  vim.api.nvim_create_user_command('NeoNoteCreate', function()
-    M.create_from_current_buffer()
-  end, {})
+	vim.api.nvim_create_user_command("NeoNoteNew", function(opts)
+		local title = opts.args and opts.args ~= "" and opts.args or nil
+		M.create_new_note(title)
+	end, { nargs = "?" })
+
+	vim.api.nvim_create_user_command("NeoNoteSync", function()
+		local bufnr = vim.api.nvim_get_current_buf()
+		local filepath = vim.api.nvim_buf_get_name(bufnr)
+		if filepath and filepath ~= "" then
+			M.sync_note(filepath, bufnr)
+		else
+			utils.notify("No file to sync", vim.log.levels.WARN)
+		end
+	end, {})
+
+	vim.api.nvim_create_user_command("NeoNoteRefresh", function()
+		M.refresh_current_note()
+	end, {})
+
+	vim.api.nvim_create_user_command("NeoNoteStatus", function()
+		M.check_status()
+	end, {})
+
+	vim.api.nvim_create_user_command("NeoNoteCreate", function()
+		M.create_from_current_buffer()
+	end, {})
+
+	vim.api.nvim_create_user_command("NeoNoteReload", function()
+		vim.cmd("edit!")
+		utils.notify("Buffer reloaded from disk")
+	end, {})
 end
 
 -- Sync a note file to the API
-function M.sync_note(filepath)
+function M.sync_note(filepath, bufnr)
 	if not filepath or filepath == "" then
 		utils.notify("Invalid file path", vim.log.levels.ERROR)
 		return
@@ -110,209 +115,271 @@ function M.sync_note(filepath)
 	-- If neonote field exists but has no ID (empty, null, or missing), create new note
 	if not note_id then
 		utils.log("Creating new note for " .. filepath .. " (neonote field exists but no ID)")
-		M.create_note_from_existing_file(filepath, title, body)
+		M.create_note_from_existing_file(filepath, title, bufnr)
 		return
 	end
 
-	utils.log("Syncing note ID " .. note_id .. " from " .. filepath)
+	utils.log("Saving note ID " .. note_id .. " from " .. filepath .. "...")
+	utils.notify("Saving note ID " .. note_id .. " from " .. filepath .. ". Please keep this buffer open...")
 
 	-- Try to update the existing note
-	api.update_note(note_id, title, body, function(success, response)
+	api.update_note(note_id, title, content, function(success, response)
 		if success then
-			utils.notify("Note " .. note_id .. " synced successfully")
-			utils.log("Note " .. note_id .. " synced successfully")
+			utils.notify("Note ID " .. note_id .. " synced successfully")
+			utils.log("Note ID " .. note_id .. " synced successfully")
 		else
-			utils.notify("Failed to sync note " .. note_id .. ": " .. (response or "Unknown error"), vim.log.levels.ERROR)
-			utils.log("Failed to sync note " .. note_id .. ": " .. (response or "Unknown error"))
+			utils.notify(
+				"Failed to sync note ID " .. note_id .. ": " .. (response or "Unknown error"),
+				vim.log.levels.ERROR
+			)
+			utils.log("Failed to sync note ID " .. note_id .. ": " .. (response or "Unknown error"))
 		end
 	end)
 end
 
 -- Create a new note from an existing file that has neonote field but no ID
-function M.create_note_from_existing_file(filepath, title, content)
-  api.create_note(title, content, function(success, response)
-    if success and response then
-      local note_id = response.id
-      utils.log("Created new note with ID " .. note_id .. " for " .. filepath)
-      
-      -- Read current file content to preserve any changes
-      local current_content = utils.read_file(filepath)
-      if current_content then
-        -- Update the frontmatter with the new note ID
-        local updated_content = utils.update_frontmatter_id(current_content, note_id)
-        
-        -- Write back to file
-        if utils.write_file(filepath, updated_content) then
-          -- Update the current buffer if it's the same file
-          local current_buffer_file = vim.api.nvim_buf_get_name(0)
-          if current_buffer_file == filepath then
-            local lines = vim.split(updated_content, '\n')
-            vim.api.nvim_buf_set_lines(0, 0, -1, false, lines)
-            vim.api.nvim_buf_set_option(0, 'modified', false)
-          end
-          
-          utils.notify("Created new note " .. note_id .. " and updated frontmatter")
-          utils.log("Updated frontmatter in " .. filepath .. " with note ID " .. note_id)
-        else
-          utils.notify("Created note " .. note_id .. " but failed to update file frontmatter", vim.log.levels.WARN)
-        end
-      end
-    else
-      utils.notify("Failed to create note: " .. (response or "Unknown error"), vim.log.levels.ERROR)
-      utils.log("Failed to create note: " .. (response or "Unknown error"))
-    end
-  end)
+function M.create_note_from_existing_file(filepath, title, bufnr)
+	utils.notify("Creating new note from " .. filepath .. ".  Please keep this buffer open...")
+	-- Create a note with an empty body first to get an ID
+	api.create_note(title, "", function(success, response)
+		if success and response then
+			local note_id = response.id
+			utils.log("Created new note with ID " .. note_id .. " for " .. filepath)
+
+			-- Read current file content to preserve any changes
+			local current_content = utils.read_file(filepath)
+			if not current_content then
+				utils.notify("Failed to read file " .. filepath .. " after creating note.", vim.log.levels.ERROR)
+				return
+			end
+
+			-- Update the frontmatter with the new note ID
+			local updated_content = utils.update_frontmatter_id(current_content, note_id)
+
+			-- Now update the note with the full content including the ID
+			api.update_note(note_id, title, updated_content, function(update_success, update_response)
+				if not update_success then
+					utils.notify(
+						"Note "
+							.. note_id
+							.. " created, but failed to sync content: "
+							.. (update_response or "Unknown error"),
+						vim.log.levels.WARN
+					)
+				end
+			end)
+
+			-- Write back to file
+			if utils.write_file(filepath, updated_content) then
+				if bufnr then
+					local current_buf = vim.api.nvim_get_current_buf()
+					if bufnr == current_buf then
+						-- The updated file belongs to the currently active buffer.
+						-- Schedule a reload.
+						vim.schedule(function()
+							vim.cmd("NeoNoteReload")
+						end)
+					else
+						utils.log(
+							"File " .. filepath .. " updated in background buffer " .. bufnr .. ". Not reloading."
+						)
+					end
+				end
+
+				utils.notify("Created new note " .. note_id .. " and updated frontmatter")
+				utils.log("Updated frontmatter in " .. filepath .. " with note ID " .. note_id)
+			else
+				utils.notify(
+					"Created note " .. note_id .. " but failed to update file frontmatter",
+					vim.log.levels.WARN
+				)
+			end
+		else
+			utils.notify("Failed to create note: " .. (response or "Unknown error"), vim.log.levels.ERROR)
+			utils.log("Failed to create note: " .. (response or "Unknown error"))
+		end
+	end)
 end
 
 -- Create a new note
 function M.create_new_note(title)
-  local default_title = title or "New Note"
-  local body_content = "# " .. default_title .. "\n\n"
-  
-  api.create_note(default_title, body_content, function(success, response)
-    if success and response then
-      local note_id = response.id
-      local watched_folders = config.get('watched_folders')
-      
-      if #watched_folders == 0 then
-        utils.notify("No watched folders configured", vim.log.levels.WARN)
-        return
-      end
-      
-      -- Use first watched folder
-      local folder = vim.fn.expand(watched_folders[1])
-      -- Use a meaningful filename instead of just the ID
-      local filename = utils.sanitize_filename(default_title) .. ".md"
-      local filepath = folder .. "/" .. filename
-      
-      -- Create directory if it doesn't exist
-      vim.fn.mkdir(vim.fn.fnamemodify(filepath, ':h'), 'p')
-      
-      -- Create content with frontmatter
-      local full_content = utils.add_frontmatter_id(body_content, note_id)
-      
-      -- Write content to file
-      utils.write_file(filepath, full_content)
-      
-      -- Open the file
-      vim.cmd('edit ' .. filepath)
-      
-      utils.notify("Created new note: " .. filename)
-      utils.log("Created new note with ID " .. note_id .. " in file " .. filename)
-    else
-      utils.notify("Failed to create note: " .. (response or "Unknown error"), vim.log.levels.ERROR)
-      utils.log("Failed to create note: " .. (response or "Unknown error"))
-    end
-  end)
+	local default_title = title or "New Note"
+	local body_content = "# " .. default_title .. "\n\n"
+
+	-- Create a note with an empty body first to get an ID
+	api.create_note(default_title, "", function(success, response)
+		if success and response then
+			local note_id = response.id
+			local watched_folders = config.get("watched_folders")
+
+			if #watched_folders == 0 then
+				utils.notify("No watched folders configured", vim.log.levels.WARN)
+				return
+			end
+
+			-- Use first watched folder
+			local folder = vim.fn.expand(watched_folders[1])
+			-- Use a meaningful filename instead of just the ID
+			local filename = utils.sanitize_filename(default_title) .. ".md"
+			local filepath = folder .. "/" .. filename
+
+			-- Create directory if it doesn't exist
+			vim.fn.mkdir(vim.fn.fnamemodify(filepath, ":h"), "p")
+
+			-- Create content with frontmatter
+			local full_content = utils.add_frontmatter_id(body_content, note_id)
+
+			-- Now update the note with the full content including the ID
+			api.update_note(note_id, default_title, full_content, function(update_success, update_response)
+				if not update_success then
+					utils.notify(
+						"Note "
+							.. note_id
+							.. " created, but failed to sync content: "
+							.. (update_response or "Unknown error"),
+						vim.log.levels.WARN
+					)
+				end
+			end)
+
+			-- Write content to file
+			utils.write_file(filepath, full_content)
+
+			-- Open the file
+			vim.cmd("edit " .. filepath)
+
+			utils.notify("Created new note: " .. filename)
+			utils.log("Created new note with ID " .. note_id .. " in file " .. filename)
+		else
+			utils.notify("Failed to create note: " .. (response or "Unknown error"), vim.log.levels.ERROR)
+			utils.log("Failed to create note: " .. (response or "Unknown error"))
+		end
+	end)
 end
 
 -- Refresh current note from API
 function M.refresh_current_note()
-  local filepath = vim.api.nvim_buf_get_name(0)
-  if not filepath or filepath == '' then
-    utils.notify("No file open", vim.log.levels.WARN)
-    return
-  end
-  
-  -- Read current file content to get note ID from frontmatter
-  local content = utils.read_file(filepath)
-  if not content then
-    utils.notify("Could not read current file", vim.log.levels.ERROR)
-    return
-  end
-  
-  local note_id, has_neonote_field = utils.extract_neonote_id(content)
-  if not has_neonote_field or not note_id then
-    utils.notify("Current file is not a synced note (no neonote ID in frontmatter)", vim.log.levels.WARN)
-    return
-  end
-  
-  api.get_note(note_id, function(success, response)
-    if success and response then
-      local api_content = response.content or ""
-      
-      -- Preserve current frontmatter but update the body with API content
-      local frontmatter, _ = utils.parse_frontmatter(content)
-      local updated_content = utils.update_frontmatter_id(api_content, note_id)
-      
-      -- Replace buffer content
-      local lines = vim.split(updated_content, '\n')
-      vim.api.nvim_buf_set_lines(0, 0, -1, false, lines)
-      
-      -- Mark buffer as not modified
-      vim.api.nvim_buf_set_option(0, 'modified', false)
-      
-      utils.notify("Note " .. note_id .. " refreshed from API")
-      utils.log("Note " .. note_id .. " refreshed from API")
-    else
-      utils.notify("Failed to refresh note " .. note_id .. ": " .. (response or "Unknown error"), vim.log.levels.ERROR)
-      utils.log("Failed to refresh note " .. note_id .. ": " .. (response or "Unknown error"))
-    end
-  end)
+	local filepath = vim.api.nvim_buf_get_name(0)
+	if not filepath or filepath == "" then
+		utils.notify("No file open", vim.log.levels.WARN)
+		return
+	end
+
+	-- Read current file content to get note ID from frontmatter
+	local content = utils.read_file(filepath)
+	if not content then
+		utils.notify("Could not read current file", vim.log.levels.ERROR)
+		return
+	end
+
+	local note_id, has_neonote_field = utils.extract_neonote_id(content)
+	if not has_neonote_field or not note_id then
+		utils.notify("Current file is not a synced note (no neonote ID in frontmatter)", vim.log.levels.WARN)
+		return
+	end
+
+	api.get_note(note_id, function(success, response)
+		if success and response then
+			local api_content = response.content or ""
+
+			vim.schedule(function()
+				-- Replace buffer content with content from the API
+				local lines = vim.split(api_content, "\n")
+				vim.api.nvim_buf_set_lines(0, 0, -1, false, lines)
+
+				-- Mark buffer as not modified
+				vim.api.nvim_buf_set_option(0, "modified", false)
+			end)
+
+			utils.notify("Note " .. note_id .. " refreshed from API")
+			utils.log("Note " .. note_id .. " refreshed from API")
+		else
+			utils.notify(
+				"Failed to refresh note " .. note_id .. ": " .. (response or "Unknown error"),
+				vim.log.levels.ERROR
+			)
+			utils.log("Failed to refresh note " .. note_id .. ": " .. (response or "Unknown error"))
+		end
+	end)
 end
 
 -- Create note from current buffer content
 function M.create_from_current_buffer()
-  local filepath = vim.api.nvim_buf_get_name(0)
-  if not filepath or filepath == '' then
-    utils.notify("No file open", vim.log.levels.WARN)
-    return
-  end
-  
-  if not filepath:match('%.md$') then
-    utils.notify("Current file is not a markdown file", vim.log.levels.WARN)
-    return
-  end
-  
-  -- Get buffer content
-  local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
-  local content = table.concat(lines, '\n')
-  
-  -- Check if it already has a neonote ID
-  local existing_id, has_neonote_field = utils.extract_neonote_id(content)
-  if has_neonote_field and existing_id then
-    utils.notify("Current file already has a neonote ID: " .. existing_id, vim.log.levels.WARN)
-    return
-  end
-  
-  -- Extract title from filename or content and body content
-  local title = utils.extract_title(filepath, content)
-  local _, body = utils.parse_frontmatter(content)
-  
-  api.create_note(title, body, function(success, response)
-    if success and response then
-      local note_id = response.id
-      
-      -- Add frontmatter with neonote ID to current content
-      local updated_content = utils.add_frontmatter_id(content, note_id)
-      
-      -- Update buffer content
-      local updated_lines = vim.split(updated_content, '\n')
-      vim.api.nvim_buf_set_lines(0, 0, -1, false, updated_lines)
-      
-      -- Mark buffer as modified so user can save
-      vim.api.nvim_buf_set_option(0, 'modified', true)
-      
-      utils.notify("Created note with ID " .. note_id .. ", frontmatter added. Save to persist changes.")
-      utils.log("Created note with ID " .. note_id .. " from buffer, added frontmatter")
-    else
-      utils.notify("Failed to create note: " .. (response or "Unknown error"), vim.log.levels.ERROR)
-      utils.log("Failed to create note: " .. (response or "Unknown error"))
-    end
-  end)
+	local filepath = vim.api.nvim_buf_get_name(0)
+	if not filepath or filepath == "" then
+		utils.notify("No file open", vim.log.levels.WARN)
+		return
+	end
+
+	if not filepath:match("%.md$") then
+		utils.notify("Current file is not a markdown file", vim.log.levels.WARN)
+		return
+	end
+
+	-- Get buffer content
+	local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+	local content = table.concat(lines, "\n")
+
+	-- Check if it already has a neonote ID
+	local existing_id, has_neonote_field = utils.extract_neonote_id(content)
+	if has_neonote_field and existing_id then
+		utils.notify("Current file already has a neonote ID: " .. existing_id, vim.log.levels.WARN)
+		return
+	end
+
+	-- Extract title from filename or content
+	local title = utils.extract_title(filepath, content)
+
+	-- Create a note with an empty body first to get an ID
+	api.create_note(title, "", function(success, response)
+		if success and response then
+			local note_id = response.id
+
+			-- Add frontmatter with neonote ID to current content
+			local updated_content = utils.add_frontmatter_id(content, note_id)
+
+			-- Now update the note with the full content including the ID
+			api.update_note(note_id, title, updated_content, function(update_success, update_response)
+				if not update_success then
+					utils.notify(
+						"Note "
+							.. note_id
+							.. " created, but failed to sync content: "
+							.. (update_response or "Unknown error"),
+						vim.log.levels.WARN
+					)
+				end
+			end)
+
+			vim.schedule(function()
+				-- Update buffer content
+				local updated_lines = vim.split(updated_content, "\n")
+				vim.api.nvim_buf_set_lines(0, 0, -1, false, updated_lines)
+
+				-- Mark buffer as modified so user can save
+				vim.api.nvim_buf_set_option(0, "modified", true)
+			end)
+
+			utils.notify("Created note with ID " .. note_id .. ", frontmatter added. Save to persist changes.")
+			utils.log("Created note with ID " .. note_id .. " from buffer, added frontmatter")
+		else
+			utils.notify("Failed to create note: " .. (response or "Unknown error"), vim.log.levels.ERROR)
+			utils.log("Failed to create note: " .. (response or "Unknown error"))
+		end
+	end)
 end
 
 -- Check API status
 function M.check_status()
-  api.ping(function(success, response)
-    if success then
-      utils.notify("API connection: OK")
-      utils.log("API connection successful")
-    else
-      utils.notify("API connection failed: " .. (response or "Unknown error"), vim.log.levels.ERROR)
-      utils.log("API connection failed: " .. (response or "Unknown error"))
-    end
-  end)
+	api.ping(function(success, response)
+		if success then
+			utils.notify("API connection: OK")
+			utils.log("API connection successful")
+		else
+			utils.notify("API connection failed: " .. (response or "Unknown error"), vim.log.levels.ERROR)
+			utils.log("API connection failed: " .. (response or "Unknown error"))
+		end
+	end)
 end
 
-return M 
+return M
