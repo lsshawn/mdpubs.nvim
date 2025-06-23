@@ -63,9 +63,10 @@ function M.setup_commands()
 		end
 	end, {})
 
-	vim.api.nvim_create_user_command("NeoNoteRefresh", function()
-		M.refresh_current_note()
-	end, {})
+	vim.api.nvim_create_user_command("NeoNoteRefresh", function(opts)
+		local version = opts.args and tonumber(opts.args) or nil
+		M.refresh_current_note(version)
+	end, { nargs = "?" })
 
 	vim.api.nvim_create_user_command("NeoNoteStatus", function()
 		M.check_status()
@@ -236,7 +237,7 @@ function M.create_new_note(title)
 end
 
 -- Refresh current note from API
-function M.refresh_current_note()
+function M.refresh_current_note(version)
 	local filepath = vim.api.nvim_buf_get_name(0)
 	if not filepath or filepath == "" then
 		utils.notify("No file open", vim.log.levels.WARN)
@@ -256,7 +257,7 @@ function M.refresh_current_note()
 		return
 	end
 
-	api.get_note(note_id, function(success, response)
+	api.get_note(note_id, version, function(success, response)
 		if success and response then
 			local api_content = response.content or ""
 
@@ -269,14 +270,20 @@ function M.refresh_current_note()
 				vim.api.nvim_buf_set_option(0, "modified", false)
 			end)
 
-			utils.notify("Note " .. note_id .. " refreshed from API")
-			utils.log("Note " .. note_id .. " refreshed from API")
+			if version then
+				utils.notify("Note " .. note_id .. " restored to version " .. version)
+				utils.log("Note " .. note_id .. " restored to version " .. version)
+			else
+				utils.notify("Note " .. note_id .. " refreshed from API")
+				utils.log("Note " .. note_id .. " refreshed from API")
+			end
 		else
-			utils.notify(
-				"Failed to refresh note " .. note_id .. ": " .. (response or "Unknown error"),
-				vim.log.levels.ERROR
-			)
-			utils.log("Failed to refresh note " .. note_id .. ": " .. (response or "Unknown error"))
+			local error_message = "Failed to refresh note " .. note_id
+			if version then
+				error_message = "Failed to restore note " .. note_id .. " to version " .. version
+			end
+			utils.notify(error_message .. ": " .. utils.parse_error_response(response), vim.log.levels.ERROR)
+			utils.log(error_message .. ": " .. utils.parse_error_response(response))
 		end
 	end)
 end

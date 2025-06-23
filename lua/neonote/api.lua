@@ -96,8 +96,17 @@ function M.update_note(id, title, content, file_extension, callback)
 end
 
 -- Get a note by ID
-function M.get_note(id, callback)
-  make_request("GET", "/api/notes/" .. id, nil, callback)
+function M.get_note(id, version, callback)
+  if type(version) == "function" then
+    callback = version
+    version = nil
+  end
+
+  local endpoint = "/api/notes/" .. id
+  if version then
+    endpoint = endpoint .. "?version=" .. tostring(version)
+  end
+  make_request("GET", endpoint, nil, callback)
 end
 
 -- Delete a note by ID
