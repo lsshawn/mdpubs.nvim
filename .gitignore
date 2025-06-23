@@ -1,0 +1,16 @@
+# Vim/Neovim temporary files
+*.swp
+*.swo
+*~
+
+# Plugin development
+.DS_Store
+Thumbs.db
+
+# Test files
+test/
+tests/
+spec/
+
+# Documentation build
+doc/tags 
