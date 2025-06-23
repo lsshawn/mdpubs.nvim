@@ -6,11 +6,8 @@ A Neovim plugin for seamless integration with NeoNote API, enabling automatic sy
 
 - **Frontmatter-based syncing**: Use YAML frontmatter to manage note synchronization instead of rigid filename requirements
 - **Auto-sync on save**: Automatically syncs any markdown file with `neonote:` frontmatter when saved
-- **Flexible file naming**: Use meaningful filenames like `meeting-notes.md` or `project-ideas.md`
 - **Smart note creation**: Create new notes directly from existing markdown files
 - **Bi-directional sync**: Push local changes to API and pull updates from API
-- **Debug logging**: Built-in logging for troubleshooting
-- **User-friendly notifications**: Clear feedback on sync status
 
 ## Installation
 
@@ -18,35 +15,16 @@ A Neovim plugin for seamless integration with NeoNote API, enabling automatic sy
 
 ```lua
 {
-  "your-username/neonote.nvim",
+  "lsshawn/neonote.nvim",
   config = function()
     require("neonote").setup({
-      api_url = "http://localhost:1323",
+      api_url = "http://api-neonote.cupbots.com",
       api_key = "your-64-character-api-key-here",
-      watched_folders = {
-        "~/notes",
-        "~/documents/work",
-        "~/personal/journal",
-      },
       auto_save = true,
       notifications = true,
-      debug = false,
     })
   end,
 }
-```
-
-### Using other plugin managers
-
-```lua
-require("neonote").setup({
-  api_url = "http://localhost:1323",
-  api_key = "your-api-key-here",
-  watched_folders = {
-    "~/notes",
-    "~/documents/notes",
-  },
-})
 ```
 
 ## Configuration
@@ -55,10 +33,8 @@ require("neonote").setup({
 |--------|------|---------|-------------|
 | `api_url` | string | `""` | Your NeoNote API endpoint URL |
 | `api_key` | string | `""` | Your API authentication key |
-| `watched_folders` | table | `{}` | (Optional) Folders for creating new notes with `:NeoNoteNew` |
 | `auto_save` | boolean | `true` | Enable automatic sync on file save |
 | `notifications` | boolean | `true` | Show success/error notifications |
-| `debug` | boolean | `false` | Enable debug logging |
 
 ## How It Works
 
@@ -69,12 +45,11 @@ The plugin uses YAML frontmatter to manage note synchronization. Add a `neonote:
 #### New Note (will create a new note on save)
 ```markdown
 ---
-neonote:
 title: "My Important Note"
+neonote:
 ---
-# My Important Note
 
-This is my note content...
+Your markdown content...
 ```
 
 When you save this file, the plugin will:
@@ -93,28 +68,19 @@ title: "My Important Note"
 This is my updated note content...
 ```
 
-#### Regular Markdown (will be ignored)
-```markdown
-# Regular Note
-
-This file has no neonote frontmatter, so it won't be synced.
-```
-
 ### File Organization
 
-- Use meaningful filenames: `meeting-notes.md`, `project-roadmap.md`, `daily-journal.md`
-- Files without `neonote:` frontmatter are ignored (not synced)
-- Files can be located **anywhere** on your system - no folder restrictions!
 - Only `.md` files with `neonote:` frontmatter are processed
+- Files without `neonote:` frontmatter are ignored (not synced)
+- File naming doesn't matter as long as it's a `.md` file
+- Files can be located **anywhere** on your system - no folder restrictions!
 
 ## Commands
 
 | Command | Description |
 |---------|-------------|
-| `:NeoNoteNew [title]` | Create a new note with optional title |
 | `:NeoNoteSync` | Manually sync current file |
 | `:NeoNoteRefresh` | Refresh current note from API |
-| `:NeoNoteCreate` | Convert current buffer to a synced note |
 | `:NeoNoteStatus` | Check API connection status |
 
 ## Keymaps (Optional)
@@ -122,65 +88,23 @@ This file has no neonote frontmatter, so it won't be synced.
 Add these to your Neovim config:
 
 ```lua
-vim.keymap.set("n", "<leader>nn", ":NeoNoteNew<CR>", { desc = "Create new note" })
 vim.keymap.set("n", "<leader>ns", ":NeoNoteSync<CR>", { desc = "Sync current note" })
 vim.keymap.set("n", "<leader>nr", ":NeoNoteRefresh<CR>", { desc = "Refresh note from API" })
 vim.keymap.set("n", "<leader>nt", ":NeoNoteStatus<CR>", { desc = "Check API status" })
-vim.keymap.set("n", "<leader>nc", ":NeoNoteCreate<CR>", { desc = "Convert to synced note" })
 ```
 
-## Debugging
-
-### Enable Debug Mode
-
-Set `debug = true` in your configuration:
-
-```lua
-require("neonote").setup({
-  -- ... other options
-  debug = true,
-})
-```
-
-### View Debug Logs
-
-Use `:messages` in Neovim to see debug output:
-
-```
-:messages
-```
-
-Debug logs include:
-- Plugin loading status
-- File sync operations
-- API requests and responses
-- Frontmatter parsing results
-- Error details
-
-## Workflow Examples
-
-### Starting Fresh
+## Starting Fresh
 
 1. Get your API key:
    ```bash
-   curl -X POST http://localhost:1323/api/users \
+   curl -X POST https://api-neonote.cupbots.com \
      -H "Content-Type: application/json" \
      -d '{"email": "you@example.com"}'
    ```
 
 2. Configure the plugin with your API key
 
-3. Create a notes folder:
-   ```bash
-   mkdir -p ~/notes
-   ```
-
-4. Create your first note:
-   ```bash
-   nvim ~/notes/my-first-note.md
-   ```
-
-5. Add frontmatter and content:
+3. Open a `.md` note and add `neonote: ` to its frontmatter:
    ```markdown
    ---
    neonote:
@@ -190,7 +114,7 @@ Debug logs include:
    Hello, world!
    ```
 
-6. Save the file - it will automatically sync and get an ID!
+4. Save the file - it will automatically create and get an ID
 
 ### Converting Existing Notes
 
@@ -235,16 +159,3 @@ Authentication via `X-API-Key` header.
 3. Use `---` to delimit frontmatter blocks
 4. Enable debug mode to see parsing results
 
-## License
-
-MIT
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
-
-Please ensure your changes maintain backward compatibility and include appropriate documentation updates. 
