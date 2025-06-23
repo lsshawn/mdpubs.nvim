@@ -13,8 +13,9 @@ require("lazy").setup({
         -- Your API key (get this by creating a user in your API)
         api_key = "your-64-character-api-key-here",
         
-        -- Folders to watch for .md files
-        -- The plugin will auto-sync any .md files in these folders
+        -- Optional: Folders for creating new notes
+        -- This is only used when creating new notes with :NeoNoteNew
+        -- Syncing works for ANY .md file with 'neonote:' frontmatter
         watched_folders = {
           "~/notes",              -- Main notes folder
           "~/documents/work",     -- Work notes
@@ -36,9 +37,9 @@ require("lazy").setup({
 require("neonote").setup({
   api_url = "http://localhost:1323",
   api_key = "your-api-key-here",
+  -- watched_folders is optional
   watched_folders = {
     "~/notes",
-    "~/documents/notes",
   },
 })
 --]]
@@ -54,7 +55,28 @@ vim.keymap.set("n", "<leader>nt", ":NeoNoteStatus<CR>", { desc = "Check API stat
 --    curl -X POST http://localhost:1323/api/users -H "Content-Type: application/json" -d '{"email": "you@example.com"}'
 -- 2. Copy the api_key from the response
 -- 3. Update the api_key in your config above
--- 4. Create your notes folder: mkdir -p ~/notes
--- 5. Create a note: echo "# My First Note" > ~/notes/1.md
--- 6. Open in Neovim: nvim ~/notes/1.md
--- 7. Edit and save - it will auto-sync to your API! 
+
+-- 4. To sync files with the API, add frontmatter to your markdown files:
+--    
+--    Example new note (will create a new note on save):
+--    ---
+--    neonote:
+--    title: "My Important Note"
+--    ---
+--    # My Important Note
+--    
+--    This is my note content...
+--
+--    Example existing note (will update note ID 123 on save):
+--    ---
+--    neonote: 123
+--    title: "My Important Note" 
+--    ---
+--    # My Important Note
+--    
+--    This is my updated note content...
+--
+-- 5. Files can be ANYWHERE on your system - no need for specific folders!
+-- 6. Files without 'neonote:' in frontmatter will be ignored (not synced)
+-- 7. Use meaningful filenames like "meeting-notes.md" or "project-ideas.md"
+-- 8. The plugin will automatically handle the API sync based on frontmatter! 

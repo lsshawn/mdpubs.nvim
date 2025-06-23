@@ -14,3 +14,4 @@ spec/
 
 # Documentation build
 doc/tags 
+.aider*

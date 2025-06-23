@@ -36,8 +36,9 @@ function M.validate()
     table.insert(errors, "api_key is required")
   end
   
-  if not config.watched_folders or type(config.watched_folders) ~= "table" then
-    table.insert(errors, "watched_folders must be a table")
+  -- watched_folders is now optional (only needed for creating new notes)
+  if config.watched_folders and type(config.watched_folders) ~= "table" then
+    table.insert(errors, "watched_folders must be a table if provided")
   end
   
   if #errors > 0 then
