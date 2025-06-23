@@ -166,6 +166,14 @@ function M.extract_note_id(filepath)
 	return note_id
 end
 
+-- Get file extension from filepath
+function M.get_file_extension(filepath)
+	if not filepath or filepath == "" then
+		return ""
+	end
+	return vim.fn.fnamemodify(filepath, ":e")
+end
+
 -- Extract title from filepath and content
 function M.extract_title(filepath, content)
 	-- First try to get title from first line of content (if it starts with #)

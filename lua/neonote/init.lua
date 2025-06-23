@@ -110,7 +110,7 @@ function M.sync_note(filepath, bufnr)
 	end
 
 	-- Extract title from filename or first line
-	local title = filepath
+	local title = utils.extract_title(filepath, content)
 
 	-- If neonote field exists but has no ID (empty, null, or missing), create new note
 	if not note_id then
@@ -123,7 +123,8 @@ function M.sync_note(filepath, bufnr)
 	utils.notify("Saving note ID " .. note_id .. " from " .. filepath .. ". Please keep this buffer open...")
 
 	-- Try to update the existing note
-	api.update_note(note_id, title, content, function(success, response)
+	local file_extension = utils.get_file_extension(filepath)
+	api.update_note(note_id, title, content, file_extension, function(success, response)
 		if success then
 			utils.notify("Note ID " .. note_id .. " synced successfully")
 			utils.log("Note ID " .. note_id .. " synced successfully")
@@ -140,34 +141,23 @@ end
 -- Create a new note from an existing file that has neonote field but no ID
 function M.create_note_from_existing_file(filepath, title, bufnr)
 	utils.notify("Creating new note from " .. filepath .. ".  Please keep this buffer open...")
-	-- Create a note with an empty body first to get an ID
-	api.create_note(title, "", function(success, response)
+
+	-- Read current file content to send to API
+	local current_content = utils.read_file(filepath)
+	if not current_content then
+		utils.notify("Failed to read file " .. filepath, vim.log.levels.ERROR)
+		return
+	end
+
+	local file_extension = utils.get_file_extension(filepath)
+	-- Create note with full content. The content sent to API won't have the ID yet.
+	api.create_note(title, current_content, file_extension, function(success, response)
 		if success and response then
 			local note_id = response.id
 			utils.log("Created new note with ID " .. note_id .. " for " .. filepath)
 
-			-- Read current file content to preserve any changes
-			local current_content = utils.read_file(filepath)
-			if not current_content then
-				utils.notify("Failed to read file " .. filepath .. " after creating note.", vim.log.levels.ERROR)
-				return
-			end
-
 			-- Update the frontmatter with the new note ID
 			local updated_content = utils.update_frontmatter_id(current_content, note_id)
-
-			-- Now update the note with the full content including the ID
-			api.update_note(note_id, title, updated_content, function(update_success, update_response)
-				if not update_success then
-					utils.notify(
-						"Note "
-							.. note_id
-							.. " created, but failed to sync content: "
-							.. (update_response or "Unknown error"),
-						vim.log.levels.WARN
-					)
-				end
-			end)
 
 			-- Write back to file
 			if utils.write_file(filepath, updated_content) then
@@ -206,8 +196,9 @@ function M.create_new_note(title)
 	local default_title = title or "New Note"
 	local body_content = "# " .. default_title .. "\n\n"
 
-	-- Create a note with an empty body first to get an ID
-	api.create_note(default_title, "", function(success, response)
+	-- Create a note with the initial body content
+	local file_extension = "md" -- New notes are always markdown
+	api.create_note(default_title, body_content, file_extension, function(success, response)
 		if success and response then
 			local note_id = response.id
 			local watched_folders = config.get("watched_folders")
@@ -228,19 +219,6 @@ function M.create_new_note(title)
 
 			-- Create content with frontmatter
 			local full_content = utils.add_frontmatter_id(body_content, note_id)
-
-			-- Now update the note with the full content including the ID
-			api.update_note(note_id, default_title, full_content, function(update_success, update_response)
-				if not update_success then
-					utils.notify(
-						"Note "
-							.. note_id
-							.. " created, but failed to sync content: "
-							.. (update_response or "Unknown error"),
-						vim.log.levels.WARN
-					)
-				end
-			end)
 
 			-- Write content to file
 			utils.write_file(filepath, full_content)
@@ -328,28 +306,16 @@ function M.create_from_current_buffer()
 	end
 
 	-- Extract title from filename or content
-	local title = filepath
+	local title = utils.extract_title(filepath, content)
 
-	-- Create a note with an empty body first to get an ID
-	api.create_note(title, "", function(success, response)
+	-- Create a note with the buffer's content
+	local file_extension = utils.get_file_extension(filepath)
+	api.create_note(title, content, file_extension, function(success, response)
 		if success and response then
 			local note_id = response.id
 
 			-- Add frontmatter with neonote ID to current content
 			local updated_content = utils.add_frontmatter_id(content, note_id)
-
-			-- Now update the note with the full content including the ID
-			api.update_note(note_id, title, updated_content, function(update_success, update_response)
-				if not update_success then
-					utils.notify(
-						"Note "
-							.. note_id
-							.. " created, but failed to sync content: "
-							.. (update_response or "Unknown error"),
-						vim.log.levels.WARN
-					)
-				end
-			end)
 
 			vim.schedule(function()
 				-- Update buffer content

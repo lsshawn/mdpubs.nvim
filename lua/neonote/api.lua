@@ -76,19 +76,21 @@ function M.ping(callback)
 end
 
 -- Create a new note
-function M.create_note(title, content, callback)
+function M.create_note(title, content, file_extension, callback)
   local data = {
     title = title,
     content = content,
+    file_extension = file_extension,
   }
   make_request("POST", "/api/notes", data, callback)
 end
 
 -- Update an existing note
-function M.update_note(id, title, content, callback)
+function M.update_note(id, title, content, file_extension, callback)
   local data = {
     title = title,
     content = content,
+    file_extension = file_extension,
   }
   make_request("PUT", "/api/notes/" .. id, data, callback)
 end
