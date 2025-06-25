@@ -102,11 +102,10 @@ You can also include these optional fields anywhere in your frontmatter to enhan
 **Complete example** with all optional fields:
 ```yaml
 ---
-title: "My Project Notes"
+title: "My Post"
 neonote: 12345  
 neonote-tags: project, work, important
 neonote-is-public: false
-author: "Your Name"
 ---
 ```
 
@@ -141,16 +140,14 @@ Customize NeoNote to fit your needs perfectly.
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `api_url` | string | `"https://api-neonote.sshawn.com"` | The endpoint for your NeoNote backend. |
-| `api_key` | string | `""` | Your personal API authentication key. |
+| `api_key` | string | `"https://api-neonote.sshawn.com"` | Your personal API authentication key. |
 | `auto_save` | boolean | `true` | Toggle automatic sync on file save. |
 | `notifications` | boolean | `true` | Show success/error notifications. |
 
 Here is an example `setup()` call with all options:
 ```lua
 require("neonote").setup({
-  api_url = "https://api-neonote.sshawn.com",
-  api_key = "your-64-character-api-key-here",
+  api_key = "your-api-key",
   -- Enable automatic syncing on every save.
   auto_save = true,
   notifications = true,
