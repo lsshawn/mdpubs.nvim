@@ -6,6 +6,11 @@ local M = {}
 
 -- Setup function called by users
 function M.setup(opts)
+	opts = opts or {}
+	if opts.api_url == nil then
+		opts.api_url = "https://api-neonote.sshawn.com"
+	end
+
 	config.setup(opts)
 
 	utils.log("NeoNote setup started")

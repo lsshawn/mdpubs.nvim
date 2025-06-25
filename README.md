@@ -23,15 +23,14 @@ Use your favorite plugin manager. With `lazy.nvim`:
   "lsshawn/neonote.nvim",
   config = function()
     require("neonote").setup({
-      -- Get your API key from your NeoNote account dashboard
-      api_url = "https://api-neonote.cupbots.com",
-      api_key = "your-64-character-api-key-here",
+      -- Get your API key from https://neonote.sshawn.com
+      api_key = "your-api-key",
     })
   end,
 }
 ```
 
-*Don't have an account? [Sign up for NeoNote now!](https://api-neonote.cupbots.com)*
+*Don't have an account? [Sign up for NeoNote now!](https://neonote.sshawn.com)*
 
 ### 2. Tag a Note for Syncing
 
@@ -142,7 +141,7 @@ Customize NeoNote to fit your needs perfectly.
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `api_url` | string | `""` | The endpoint for your NeoNote backend. |
+| `api_url` | string | `"https://api-neonote.sshawn.com"` | The endpoint for your NeoNote backend. |
 | `api_key` | string | `""` | Your personal API authentication key. |
 | `auto_save` | boolean | `true` | Toggle automatic sync on file save. |
 | `notifications` | boolean | `true` | Show success/error notifications. |
@@ -150,7 +149,7 @@ Customize NeoNote to fit your needs perfectly.
 Here is an example `setup()` call with all options:
 ```lua
 require("neonote").setup({
-  api_url = "https://api-neonote.cupbots.com",
+  api_url = "https://api-neonote.sshawn.com",
   api_key = "your-64-character-api-key-here",
   -- Enable automatic syncing on every save.
   auto_save = true,
