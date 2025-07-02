@@ -82,13 +82,18 @@ function M.find_local_file_paths(content, base_dir)
 
 		-- Ignore absolute URLs and data URIs
 		if path and not path:match("^https?://") and not path:match("^data:") then
-			-- Construct absolute path from base_dir and relative path
-			local absolute_path = vim.fn.expand(base_dir .. "/" .. path)
+			local absolute_path
+			if path:match("^/") or path:match("^~") then
+				-- Path is absolute or starts with ~
+				absolute_path = vim.fn.expand(path)
+			else
+				-- Path is relative to the current file
+				absolute_path = vim.fn.expand(base_dir .. "/" .. path)
+			end
+
 			if vim.fn.filereadable(absolute_path) == 1 then
 				-- Store original path from markdown and its absolute path
-				-- Clean path to be used as form field name, removing leading './'
-				local key_path = path:gsub("^%./", "")
-				paths[key_path] = absolute_path
+				paths[path] = absolute_path
 			else
 				M.log("File not found or not readable: " .. absolute_path)
 			end

@@ -59,10 +59,14 @@ local function make_request(method, endpoint, data, files, callback)
 		end
 		if has_files then
 			for key, filepath in pairs(files) do
-				-- key = relative path in markdown, e.g., 'assets/image.png'
+				-- key = original path from markdown, e.g., '../assets/image.png'
 				-- filepath = absolute path on disk
 				table.insert(cmd, "--form")
-				table.insert(cmd, key .. "=@" .. filepath)
+				-- Use 'files[]' to allow multiple files and pass the original path as 'filename'.
+				-- This is more robust as some backends sanitize form field names containing paths.
+				-- The filename is quoted to handle any special characters in the path.
+				local escaped_key = key:gsub('"', '\\"')
+				table.insert(cmd, string.format('files[]=@%s;filename="%s"', filepath, escaped_key))
 			end
 		end
 	end
