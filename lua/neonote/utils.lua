@@ -86,7 +86,9 @@ function M.find_local_file_paths(content, base_dir)
 			local absolute_path = vim.fn.expand(base_dir .. "/" .. path)
 			if vim.fn.filereadable(absolute_path) == 1 then
 				-- Store original path from markdown and its absolute path
-				paths[path] = absolute_path
+				-- Clean path to be used as form field name, removing leading './'
+				local key_path = path:gsub("^%./", "")
+				paths[key_path] = absolute_path
 			else
 				M.log("File not found or not readable: " .. absolute_path)
 			end

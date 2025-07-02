@@ -59,6 +59,8 @@ local function make_request(method, endpoint, data, files, callback)
 		end
 		if has_files then
 			for key, filepath in pairs(files) do
+				-- key = relative path in markdown, e.g., 'assets/image.png'
+				-- filepath = absolute path on disk
 				table.insert(cmd, "--form")
 				table.insert(cmd, key .. "=@" .. filepath)
 			end
