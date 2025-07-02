@@ -4,32 +4,83 @@ local utils = require("neonote.utils")
 local M = {}
 
 -- Make HTTP request using curl
-local function make_request(method, endpoint, data, callback)
+local function make_request(method, endpoint, data, files, callback)
+	if type(files) == "function" then
+		callback = files
+		files = nil
+	end
+	if type(data) == "function" then
+		callback = data
+		data = nil
+		files = nil
+	end
+
+	utils.log("--- Preparing request " .. method .. " " .. endpoint)
 	local url = config.get_api_url(endpoint)
 	local headers = config.get_api_headers()
+	local has_files = files and not vim.tbl_isempty(files)
 
 	-- Build curl command
 	local cmd = { "curl", "-s", "-X", method }
 
+	-- Let curl set the content type for multipart requests
+	if method == "POST" or method == "PUT" then
+		headers["Content-Type"] = nil
+	end
+
+	utils.log("Request headers: " .. vim.inspect(headers))
+
 	-- Add headers
 	for key, value in pairs(headers) do
-		table.insert(cmd, "-H")
-		table.insert(cmd, key .. ": " .. value)
+		if value then
+			table.insert(cmd, "-H")
+			table.insert(cmd, key .. ": " .. value)
+		end
 	end
 
 	-- Add data for POST/PUT requests
-	if data and (method == "POST" or method == "PUT") then
-		table.insert(cmd, "-d")
-		table.insert(cmd, vim.fn.json_encode(data))
+	if method == "POST" or method == "PUT" then
+		-- Use multipart/form-data
+		if data then
+			for key, value in pairs(data) do
+				if type(value) == "table" then
+					for _, v in ipairs(value) do
+						table.insert(cmd, "--form")
+						table.insert(cmd, key .. "[]=" .. tostring(v))
+					end
+				elseif type(value) == "boolean" then
+					table.insert(cmd, "--form")
+					table.insert(cmd, key .. "=" .. tostring(value))
+				elseif value ~= nil then
+					table.insert(cmd, "--form")
+					table.insert(cmd, key .. "=" .. tostring(value))
+				end
+			end
+		end
+		if has_files then
+			for key, filepath in pairs(files) do
+				table.insert(cmd, "--form")
+				table.insert(cmd, key .. "=@" .. filepath)
+			end
+		end
 	end
 
 	-- Add URL
 	table.insert(cmd, url)
 
-	utils.log("Making " .. method .. " request to " .. url)
 	if data then
-		utils.log("Request data: " .. vim.fn.json_encode(data))
+		-- Avoid logging huge content field
+		local temp_data = vim.deepcopy(data)
+		if temp_data.content then
+			temp_data.content = string.format("<content %d bytes>", #temp_data.content)
+		end
+		utils.log("Request data: " .. vim.inspect(temp_data))
 	end
+	if has_files then
+		utils.log("Request files: " .. vim.inspect(files))
+	end
+
+	utils.log("Full curl command: " .. table.concat(cmd, " "))
 
 	-- Execute curl command
 	vim.fn.jobstart(cmd, {
@@ -76,10 +127,14 @@ function M.ping(callback)
 end
 
 -- Create a new note
-function M.create_note(title, content, file_extension, additional_fields, callback)
-	-- Handle case where additional_fields might be a callback function (backward compatibility)
-	if type(additional_fields) == "function" then
+function M.create_note(title, content, file_extension, additional_fields, files, callback)
+	-- Handle optional arguments
+	if type(files) == "function" then
+		callback = files
+		files = nil
+	elseif type(additional_fields) == "function" then
 		callback = additional_fields
+		files = nil
 		additional_fields = {}
 	end
 
@@ -97,14 +152,18 @@ function M.create_note(title, content, file_extension, additional_fields, callba
 		data.isPublic = additional_fields.isPublic
 	end
 
-	make_request("POST", "/notes", data, callback)
+	make_request("POST", "/notes", data, files, callback)
 end
 
 -- Update an existing note
-function M.update_note(id, title, content, file_extension, additional_fields, callback)
-	-- Handle case where additional_fields might be a callback function (backward compatibility)
-	if type(additional_fields) == "function" then
+function M.update_note(id, title, content, file_extension, additional_fields, files, callback)
+	-- Handle optional arguments
+	if type(files) == "function" then
+		callback = files
+		files = nil
+	elseif type(additional_fields) == "function" then
 		callback = additional_fields
+		files = nil
 		additional_fields = {}
 	end
 
@@ -122,7 +181,7 @@ function M.update_note(id, title, content, file_extension, additional_fields, ca
 		data.isPublic = additional_fields.isPublic
 	end
 
-	make_request("PUT", "/notes/" .. id, data, callback)
+	make_request("PUT", "/notes/" .. id, data, files, callback)
 end
 
 -- Get a note by ID

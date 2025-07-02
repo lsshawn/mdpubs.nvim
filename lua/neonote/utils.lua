@@ -72,6 +72,29 @@ function M.parse_frontmatter(content)
 	return frontmatter, body
 end
 
+-- Find local file paths in markdown content
+function M.find_local_file_paths(content, base_dir)
+	local paths = {}
+	-- Regex to find markdown link syntax: ![alt](path) or [text](path)
+	for path_and_title in content:gmatch("!*%[[^]]*]%(([^)]+)%)") do
+		-- Extract just the path, ignoring any title part
+		local path = path_and_title:match("^%s*([^%s]+)")
+
+		-- Ignore absolute URLs and data URIs
+		if path and not path:match("^https?://") and not path:match("^data:") then
+			-- Construct absolute path from base_dir and relative path
+			local absolute_path = vim.fn.expand(base_dir .. "/" .. path)
+			if vim.fn.filereadable(absolute_path) == 1 then
+				-- Store original path from markdown and its absolute path
+				paths[path] = absolute_path
+			else
+				M.log("File not found or not readable: " .. absolute_path)
+			end
+		end
+	end
+	return paths
+end
+
 -- Extract neonote ID from frontmatter
 function M.extract_neonote_id(content)
 	local start_marker = "---\n"

@@ -129,9 +129,13 @@ function M.sync_note(filepath, bufnr)
 	utils.log("Saving note ID " .. note_id .. " from " .. filepath .. "...")
 	utils.notify("Saving note ID " .. note_id .. ".\nPlease keep this buffer open...")
 
+	-- Find local files to upload
+	local base_dir = vim.fn.fnamemodify(filepath, ":h")
+	local files_to_upload = utils.find_local_file_paths(content, base_dir)
+
 	-- Try to update the existing note
 	local file_extension = utils.get_file_extension(filepath)
-	api.update_note(note_id, title, content, file_extension, additional_fields, function(success, response)
+	api.update_note(note_id, title, content, file_extension, additional_fields, files_to_upload, function(success, response)
 		if success then
 			utils.notify("Note ID " .. note_id .. " synced successfully")
 			utils.log("Note ID " .. note_id .. " synced successfully")
@@ -160,7 +164,10 @@ function M.create_note_from_existing_file(filepath, title, bufnr)
 	-- Create note with full content. The content sent to API won't have the ID yet.
 	-- Extract additional fields from the current content for the API call
 	local _, _, _, additional_fields = utils.extract_neonote_id(current_content)
-	api.create_note(title, current_content, file_extension, additional_fields, function(success, response)
+	-- Find local files to upload
+	local base_dir = vim.fn.fnamemodify(filepath, ":h")
+	local files_to_upload = utils.find_local_file_paths(current_content, base_dir)
+	api.create_note(title, current_content, file_extension, additional_fields, files_to_upload, function(success, response)
 		if success and response then
 			local note_id = response.id
 			utils.log("Created new note with ID " .. note_id .. " for " .. filepath)
@@ -323,9 +330,13 @@ function M.create_from_current_buffer()
 	-- Extract title from filename or content
 	local title = utils.extract_title(filepath, content)
 
+	-- Find local files to upload
+	local base_dir = vim.fn.fnamemodify(filepath, ":h")
+	local files_to_upload = utils.find_local_file_paths(content, base_dir)
+
 	-- Create a note with the buffer's content
 	local file_extension = utils.get_file_extension(filepath)
-	api.create_note(title, content, file_extension, additional_fields, function(success, response)
+	api.create_note(title, content, file_extension, additional_fields, files_to_upload, function(success, response)
 		if success and response then
 			local note_id = response.id
 
