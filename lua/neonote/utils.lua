@@ -76,7 +76,10 @@ end
 function M.find_local_file_paths(content, base_dir)
 	local paths = {}
 	-- Regex to find markdown link syntax: ![alt](path) or [text](path)
-	for path_and_title in content:gmatch("!*%[[^]]*]%(([^)]+)%)") do
+	-- Using %b() to handle balanced parentheses in paths.
+	for captured_link_content in content:gmatch("!*%[[^]]*](%b())") do
+		-- %b() includes the parentheses, so we strip them to get the content.
+		local path_and_title = captured_link_content:sub(2, -2)
 		-- Extract just the path, ignoring any title part
 		local path = path_and_title:match("^%s*([^%s]+)")
 
