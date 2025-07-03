@@ -81,7 +81,22 @@ function M.find_local_file_paths(content, base_dir)
 		-- %b() includes the parentheses, so we strip them to get the content.
 		local path_and_title = captured_link_content:sub(2, -2)
 		-- Extract just the path, ignoring any title part
-		local path = path_and_title:match("^%s*([^%s]+)")
+		local path
+		-- A title part starts with whitespace, then a quote.
+		local title_start_pos = path_and_title:find('%s+["\']')
+		if title_start_pos then
+			path = path_and_title:sub(1, title_start_pos - 1)
+		else
+			path = path_and_title
+		end
+
+		-- Trim leading/trailing whitespace
+		path = path:match("^%s*(.-)%s*$")
+
+		-- Handle paths enclosed in <...>
+		if path:match("^<.*>$") then
+			path = path:sub(2, -2)
+		end
 
 		-- Ignore absolute URLs and data URIs
 		if path and not path:match("^https?://") and not path:match("^data:") then
