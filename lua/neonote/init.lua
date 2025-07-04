@@ -135,18 +135,26 @@ function M.sync_note(filepath, bufnr)
 
 	-- Try to update the existing note
 	local file_extension = utils.get_file_extension(filepath)
-	api.update_note(note_id, title, content, file_extension, additional_fields, files_to_upload, function(success, response)
-		if success then
-			utils.notify("Note ID " .. note_id .. " synced successfully")
-			utils.log("Note ID " .. note_id .. " synced successfully")
-		else
-			utils.notify(
-				"Failed to sync note ID " .. note_id .. ":\n" .. (response or "Unknown error"),
-				vim.log.levels.ERROR
-			)
-			utils.log("Failed to sync note ID " .. note_id .. ": " .. (response or "Unknown error"))
+	api.update_note(
+		note_id,
+		title,
+		content,
+		file_extension,
+		additional_fields,
+		files_to_upload,
+		function(success, response)
+			if success then
+				utils.notify("Note ID " .. note_id .. " synced successfully")
+				utils.log("Note ID " .. note_id .. " synced successfully")
+			else
+				utils.notify(
+					"Failed to sync note ID " .. note_id .. ":\n" .. (response or "Unknown error"),
+					vim.log.levels.ERROR
+				)
+				utils.log("Failed to sync note ID " .. note_id .. ": " .. (response or "Unknown error"))
+			end
 		end
-	end)
+	)
 end
 
 -- Create a new note from an existing file that has neonote field but no ID
@@ -167,44 +175,51 @@ function M.create_note_from_existing_file(filepath, title, bufnr)
 	-- Find local files to upload
 	local base_dir = vim.fn.fnamemodify(filepath, ":h")
 	local files_to_upload = utils.find_local_file_paths(current_content, base_dir)
-	api.create_note(title, current_content, file_extension, additional_fields, files_to_upload, function(success, response)
-		if success and response then
-			local note_id = response.id
-			utils.log("Created new note with ID " .. note_id .. " for " .. filepath)
+	api.create_note(
+		title,
+		current_content,
+		file_extension,
+		additional_fields,
+		files_to_upload,
+		function(success, response)
+			if success and response then
+				local note_id = response.id
+				utils.log("Created new note with ID " .. note_id .. " for " .. filepath)
 
-			-- Update the frontmatter with the new note ID
-			local updated_content = utils.update_frontmatter_id(current_content, note_id)
+				-- Update the frontmatter with the new note ID
+				local updated_content = utils.update_frontmatter_id(current_content, note_id)
 
-			-- Write back to file
-			if utils.write_file(filepath, updated_content) then
-				if bufnr then
-					local current_buf = vim.api.nvim_get_current_buf()
-					if bufnr == current_buf then
-						-- The updated file belongs to the currently active buffer.
-						-- Schedule a reload.
-						vim.schedule(function()
-							vim.cmd("NeoNoteReload")
-						end)
-					else
-						utils.log(
-							"File " .. filepath .. " updated in background buffer " .. bufnr .. ". Not reloading."
-						)
+				-- Write back to file
+				if utils.write_file(filepath, updated_content) then
+					if bufnr then
+						local current_buf = vim.api.nvim_get_current_buf()
+						if bufnr == current_buf then
+							-- The updated file belongs to the currently active buffer.
+							-- Schedule a reload.
+							vim.schedule(function()
+								vim.cmd("NeoNoteReload")
+							end)
+						else
+							utils.log(
+								"File " .. filepath .. " updated in background buffer " .. bufnr .. ". Not reloading."
+							)
+						end
 					end
-				end
 
-				utils.notify("Created new note " .. note_id .. " and updated frontmatter")
-				utils.log("Updated frontmatter in " .. filepath .. " with note ID " .. note_id)
+					utils.notify("Created new note " .. note_id .. " and updated frontmatter")
+					utils.log("Updated frontmatter in " .. filepath .. " with note ID " .. note_id)
+				else
+					utils.notify(
+						"Created note " .. note_id .. " but failed to update file frontmatter",
+						vim.log.levels.WARN
+					)
+				end
 			else
-				utils.notify(
-					"Created note " .. note_id .. " but failed to update file frontmatter",
-					vim.log.levels.WARN
-				)
+				utils.notify("Failed: " .. (response or "Unknown error"), vim.log.levels.ERROR)
+				utils.log("Failed: " .. (response or "Unknown error"))
 			end
-		else
-			utils.notify("Failed to create note: " .. (response or "Unknown error"), vim.log.levels.ERROR)
-			utils.log("Failed to create note: " .. (response or "Unknown error"))
 		end
-	end)
+	)
 end
 
 -- Create a new note
@@ -245,8 +260,8 @@ function M.create_new_note(title)
 			utils.notify("Created new note: " .. filename)
 			utils.log("Created new note with ID " .. note_id .. " in file " .. filename)
 		else
-			utils.notify("Failed to create note: " .. (response or "Unknown error"), vim.log.levels.ERROR)
-			utils.log("Failed to create note: " .. (response or "Unknown error"))
+			utils.notify("Failed: " .. (response or "Unknown error"), vim.log.levels.ERROR)
+			utils.log("Failed: " .. (response or "Unknown error"))
 		end
 	end)
 end
@@ -355,8 +370,8 @@ function M.create_from_current_buffer()
 			utils.notify("Created note with ID " .. note_id .. ", frontmatter added. Save to persist changes.")
 			utils.log("Created note with ID " .. note_id .. " from buffer, added frontmatter")
 		else
-			utils.notify("Failed to create note: " .. (response or "Unknown error"), vim.log.levels.ERROR)
-			utils.log("Failed to create note: " .. (response or "Unknown error"))
+			utils.notify("Failed: " .. (response or "Unknown error"), vim.log.levels.ERROR)
+			utils.log("Failed: " .. (response or "Unknown error"))
 		end
 	end)
 end
