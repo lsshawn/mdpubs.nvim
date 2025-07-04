@@ -223,7 +223,7 @@ function M.update_frontmatter_id(content, note_id)
 
 	-- Try to replace existing neonote line (using [ \t] to avoid matching newlines)
 	local new_frontmatter_part, count =
-		frontmatter_part:gsub('("?neonote"?[ \t]*:[ \t]*)[^\r\n]*', "%1" .. tostring(note_id), 1)
+		frontmatter_part:gsub('("?neonote"?[ \t]*:)[ \t]*[^\r\n]*', "%1 " .. tostring(note_id), 1)
 
 	if count > 0 then
 		return new_frontmatter_part .. body_part
