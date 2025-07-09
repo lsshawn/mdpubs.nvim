@@ -154,8 +154,8 @@ function M.create_note(title, content, file_extension, additional_fields, files,
 	if additional_fields.tags then
 		data.tags = additional_fields.tags
 	end
-	if additional_fields.isPublic ~= nil then
-		data.isPublic = additional_fields.isPublic
+	if additional_fields.isPrivate ~= nil then
+		data.isPrivate = additional_fields.isPrivate
 	end
 
 	make_request("POST", "/notes", data, files, callback)
@@ -183,8 +183,8 @@ function M.update_note(id, title, content, file_extension, additional_fields, fi
 	if additional_fields.tags then
 		data.tags = additional_fields.tags
 	end
-	if additional_fields.isPublic ~= nil then
-		data.isPublic = additional_fields.isPublic
+	if additional_fields.isPrivate ~= nil then
+		data.isPrivate = additional_fields.isPrivate
 	end
 
 	make_request("PUT", "/notes/" .. id, data, files, callback)

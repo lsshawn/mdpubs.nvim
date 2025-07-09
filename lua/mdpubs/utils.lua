@@ -83,7 +83,7 @@ function M.find_local_file_paths(content, base_dir)
 		-- Extract just the path, ignoring any title part
 		local path
 		-- A title part starts with whitespace, then a quote.
-		local title_start_pos = path_and_title:find('%s+["\']')
+		local title_start_pos = path_and_title:find("%s+[\"']")
 		if title_start_pos then
 			path = path_and_title:sub(1, title_start_pos - 1)
 		else
@@ -158,7 +158,7 @@ function M.extract_mdpubs_id(content)
 
 	-- Extract additional mdpubs fields
 	local additional_fields = {}
-	
+
 	-- Extract mdpubs-tags
 	local tags_match = frontmatter_text:match('"?mdpubs%-tags"?[ \t]*:[ \t]*([^\r\n]+)')
 	if tags_match then
@@ -174,18 +174,18 @@ function M.extract_mdpubs_id(content)
 		end
 		additional_fields.tags = tags
 	end
-	
-	-- Extract mdpubs-is-public
-	local is_public_match = frontmatter_text:match('"?mdpubs%-is%-public"?[ \t]*:[ \t]*([^\r\n]+)')
-	if is_public_match then
+
+	-- Extract mdpubs_is_private
+	local is_private_match = frontmatter_text:match('"?mdpubs-is-private"?[ \t]*:[ \t]*([^\r\n]+)')
+	if is_private_match then
 		-- Remove quotes if present
-		is_public_match = is_public_match:match('^"(.*)"$') or is_public_match:match("^'(.*)'$") or is_public_match
+		is_private_match = is_private_match:match('^"(.*)"$') or is_private_match:match("^'(.*)'$") or is_private_match
 		-- Trim whitespace and convert to boolean
-		is_public_match = is_public_match:match("^%s*(.-)%s*$")
-		if is_public_match:lower() == "true" then
-			additional_fields.isPublic = true
-		elseif is_public_match:lower() == "false" then
-			additional_fields.isPublic = false
+		is_private_match = is_private_match:match("^%s*(.-)%s*$")
+		if is_private_match:lower() == "true" then
+			additional_fields.isPrivate = true
+		elseif is_private_match:lower() == "false" then
+			additional_fields.isPrivate = false
 		end
 	end
 
