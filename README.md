@@ -91,7 +91,7 @@ You can also include these optional fields anywhere in your frontmatter to enhan
   ---
   ```
 
-- **`mdpubs-is-public`**: Control the visibility of your notes. Your notes can be view publicly via GET 'http://api-mdpubs.com/public.notes/123456' without any API key.
+- **`mdpubs-is-public`**: Control the visibility of your notes. Your notes can be view publicly via GET 'http://api.mdpubs.com/public.notes/123456' without any API key.
   ```yaml
   ---
   mdpubs: 12345
@@ -140,7 +140,7 @@ Customize MdPubs to fit your needs perfectly.
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `api_key` | string | `"https://api-mdpubs.com"` | Your personal API authentication key. |
+| `api_key` | string | `"https://api.mdpubs.com"` | Your personal API authentication key. |
 | `auto_save` | boolean | `true` | Toggle automatic sync on file save. |
 | `notifications` | boolean | `true` | Show success/error notifications. |
 
