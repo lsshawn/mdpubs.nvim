@@ -1,6 +1,6 @@
 -- Simple debug test
 local test_content = [[---
-neonote: 123
+mdpubs: 123
 title: Test Note
 ---
 
@@ -22,8 +22,8 @@ if starts_with_frontmatter then
         local frontmatter_text = test_content:sub(4, frontmatter_end - 1)
         print("Frontmatter text:", frontmatter_text:gsub("\n", "\\n"))
         
-        -- Test neonote detection
-        local has_neonote = frontmatter_text:match('neonote%s*:') ~= nil
-        print("Has neonote field:", has_neonote)
+        -- Test mdpubs detection
+        local has_mdpubs = frontmatter_text:match('mdpubs%s*:') ~= nil
+        print("Has mdpubs field:", has_mdpubs)
     end
 end 

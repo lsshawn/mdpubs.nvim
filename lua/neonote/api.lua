@@ -1,5 +1,5 @@
-local config = require("neonote.config")
-local utils = require("neonote.utils")
+local config = require("mdpubs.config")
+local utils = require("mdpubs.utils")
 
 local M = {}
 

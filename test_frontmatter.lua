@@ -1,12 +1,12 @@
 -- Test script for frontmatter parsing
-local utils = require("neonote.utils")
+local utils = require("mdpubs.utils")
 
 -- Test cases from the markdown file
 local test_cases = {
 	{
-		name = "Unquoted neonote field",
+		name = "Unquoted mdpubs field",
 		content = [[---
-neonote: 123
+mdpubs: 123
 title: Test Note Unquoted
 author: Test User
 ---
@@ -17,9 +17,9 @@ This is a test.]],
 		expected_has_field = true,
 	},
 	{
-		name = "Quoted neonote field",
+		name = "Quoted mdpubs field",
 		content = [[---
-"neonote": 456
+"mdpubs": 456
 title: "Test Note Quoted"
 date: "2024-01-15"
 ---
@@ -32,7 +32,7 @@ This section tests the quoted field.]],
 	{
 		name = "Unquoted with spacing",
 		content = [[---
-neonote : 789
+mdpubs : 789
 title: Test with Spaces
 tags: ["test", "frontmatter"]
 ---
@@ -45,7 +45,7 @@ This tests spacing.]],
 	{
 		name = "Quoted with spacing",
 		content = [[---
-"neonote" : 101112
+"mdpubs" : 101112
 "title" : "Fully Quoted Test"
 published: false
 ---
@@ -56,14 +56,14 @@ Final test case.]],
 		expected_has_field = true,
 	},
 	{
-		name = "No neonote field",
+		name = "No mdpubs field",
 		content = [[---
 title: Regular Note
 author: Test User
 ---
 
 # Regular Note
-This note has no neonote field.]],
+This note has no mdpubs field.]],
 		expected_id = nil,
 		expected_has_field = false,
 	},
@@ -71,10 +71,10 @@ This note has no neonote field.]],
 		name = "Neonote field with no value",
 		content = [[---
 title: "foo"
-neonote:
+mdpubs:
 ---
 
-# Note with empty neonote field
+# Note with empty mdpubs field
 This should be detected as having the field, but with no ID.]],
 		expected_id = nil,
 		expected_has_field = true,
@@ -87,14 +87,14 @@ for i, test_case in ipairs(test_cases) do
 	print(string.format("Test %d: %s", i, test_case.name))
 	print(string.rep("-", 40))
 	
-	local neonote_id, has_neonote_field, body = utils.extract_neonote_id(test_case.content)
+	local mdpubs_id, has_mdpubs_field, body = utils.extract_mdpubs_id(test_case.content)
 	
 	print(string.format("Expected ID: %s", tostring(test_case.expected_id)))
-	print(string.format("Actual ID: %s", tostring(neonote_id)))
-	print(string.format("Has neonote field: %s", tostring(has_neonote_field)))
+	print(string.format("Actual ID: %s", tostring(mdpubs_id)))
+	print(string.format("Has mdpubs field: %s", tostring(has_mdpubs_field)))
 	
 	-- Check if test passed
-	local passed = (neonote_id == test_case.expected_id) and (has_neonote_field == test_case.expected_has_field)
+	local passed = (mdpubs_id == test_case.expected_id) and (has_mdpubs_field == test_case.expected_has_field)
 	
 	print(string.format("Result: %s", passed and "✓ PASS" or "✗ FAIL"))
 	print()

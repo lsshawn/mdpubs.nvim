@@ -2,7 +2,7 @@ local M = {}
 
 -- Log message if debug mode is enabled
 function M.log(message)
-	local config = require("neonote.config")
+	local config = require("mdpubs.config")
 	if config.get("debug") then
 		print("[MdPubs] " .. message)
 	end
@@ -10,7 +10,7 @@ end
 
 -- Show notification to user
 function M.notify(message, level)
-	local config = require("neonote.config")
+	local config = require("mdpubs.config")
 	if config.get("notifications") then
 		level = level or vim.log.levels.INFO
 		vim.notify("[MdPubs] " .. message, level)
@@ -120,8 +120,8 @@ function M.find_local_file_paths(content, base_dir)
 	return paths
 end
 
--- Extract neonote ID from frontmatter
-function M.extract_neonote_id(content)
+-- Extract mdpubs ID from frontmatter
+function M.extract_mdpubs_id(content)
 	local start_marker = "---\n"
 	local end_marker = "\n---\n"
 
@@ -144,23 +144,23 @@ function M.extract_neonote_id(content)
 	M.log("Frontmatter parsing debug:")
 	M.log("  - Raw frontmatter:\n" .. frontmatter_text)
 
-	-- Check for neonote field within the frontmatter
-	-- First, check if the neonote field exists at all (using [ \t] to avoid matching newlines)
-	local has_neonote_field = frontmatter_text:match('"?neonote"?[ \t]*:') ~= nil
+	-- Check for mdpubs field within the frontmatter
+	-- First, check if the mdpubs field exists at all (using [ \t] to avoid matching newlines)
+	local has_mdpubs_field = frontmatter_text:match('"?mdpubs"?[ \t]*:') ~= nil
 
 	-- Then, try to extract a numeric ID from it
-	local id_match = frontmatter_text:match('"?neonote"?[ \t]*:[ \t]*(%d+)')
-	local neonote_id = nil
+	local id_match = frontmatter_text:match('"?mdpubs"?[ \t]*:[ \t]*(%d+)')
+	local mdpubs_id = nil
 
 	if id_match then
-		neonote_id = tonumber(id_match)
+		mdpubs_id = tonumber(id_match)
 	end
 
-	-- Extract additional neonote fields
+	-- Extract additional mdpubs fields
 	local additional_fields = {}
 	
-	-- Extract neonote-tags
-	local tags_match = frontmatter_text:match('"?neonote%-tags"?[ \t]*:[ \t]*([^\r\n]+)')
+	-- Extract mdpubs-tags
+	local tags_match = frontmatter_text:match('"?mdpubs%-tags"?[ \t]*:[ \t]*([^\r\n]+)')
 	if tags_match then
 		-- Remove quotes if present
 		tags_match = tags_match:match('^"(.*)"$') or tags_match:match("^'(.*)'$") or tags_match
@@ -175,8 +175,8 @@ function M.extract_neonote_id(content)
 		additional_fields.tags = tags
 	end
 	
-	-- Extract neonote-is-public
-	local is_public_match = frontmatter_text:match('"?neonote%-is%-public"?[ \t]*:[ \t]*([^\r\n]+)')
+	-- Extract mdpubs-is-public
+	local is_public_match = frontmatter_text:match('"?mdpubs%-is%-public"?[ \t]*:[ \t]*([^\r\n]+)')
 	if is_public_match then
 		-- Remove quotes if present
 		is_public_match = is_public_match:match('^"(.*)"$') or is_public_match:match("^'(.*)'$") or is_public_match
@@ -189,18 +189,18 @@ function M.extract_neonote_id(content)
 		end
 	end
 
-	M.log("  - Parsed neonote value: " .. tostring(neonote_id))
-	M.log("  - Has neonote field: " .. tostring(has_neonote_field))
+	M.log("  - Parsed mdpubs value: " .. tostring(mdpubs_id))
+	M.log("  - Has mdpubs field: " .. tostring(has_mdpubs_field))
 	M.log("  - Additional fields: " .. vim.inspect(additional_fields))
 
-	-- Return ID (number or nil), whether neonote field exists, body, and additional fields
-	return neonote_id, has_neonote_field, body, additional_fields
+	-- Return ID (number or nil), whether mdpubs field exists, body, and additional fields
+	return mdpubs_id, has_mdpubs_field, body, additional_fields
 end
 
--- Update frontmatter with neonote ID
+-- Update frontmatter with mdpubs ID
 function M.update_frontmatter_id(content, note_id)
 	-- This function now uses string replacement to avoid reformatting the user's frontmatter.
-	-- It finds the `neonote:` key and replaces the rest of the line with the new ID.
+	-- It finds the `mdpubs:` key and replaces the rest of the line with the new ID.
 	-- If the key is not found, it adds it to the top of the frontmatter.
 
 	local start_marker = "---\n"
@@ -221,23 +221,23 @@ function M.update_frontmatter_id(content, note_id)
 	local frontmatter_part = content:sub(1, fm_end_pos + #end_marker - 1)
 	local body_part = content:sub(fm_end_pos + #end_marker)
 
-	-- Try to replace existing neonote line (using [ \t] to avoid matching newlines)
+	-- Try to replace existing mdpubs line (using [ \t] to avoid matching newlines)
 	local new_frontmatter_part, count =
-		frontmatter_part:gsub('("?neonote"?[ \t]*:)[ \t]*[^\r\n]*', "%1 " .. tostring(note_id), 1)
+		frontmatter_part:gsub('("?mdpubs"?[ \t]*:)[ \t]*[^\r\n]*', "%1 " .. tostring(note_id), 1)
 
 	if count > 0 then
 		return new_frontmatter_part .. body_part
 	else
-		-- If neonote key was not found, add it after the opening ---
-		local frontmatter_with_id = start_marker .. "neonote: " .. tostring(note_id) .. "\n"
+		-- If mdpubs key was not found, add it after the opening ---
+		local frontmatter_with_id = start_marker .. "mdpubs: " .. tostring(note_id) .. "\n"
 		local rest_of_frontmatter = frontmatter_part:sub(#start_marker + 1)
 		return frontmatter_with_id .. rest_of_frontmatter .. body_part
 	end
 end
 
--- Add frontmatter with neonote ID to content that doesn't have frontmatter
+-- Add frontmatter with mdpubs ID to content that doesn't have frontmatter
 function M.add_frontmatter_id(content, note_id)
-	local frontmatter = "---\nneonote: " .. note_id .. "\n---\n"
+	local frontmatter = "---\nmdpubs: " .. note_id .. "\n---\n"
 	return frontmatter .. content
 end
 
@@ -272,7 +272,7 @@ end
 
 -- Check if file is in watched folders (used only for creating new notes)
 function M.is_file_in_watched_folders(filepath)
-	local config = require("neonote.config")
+	local config = require("mdpubs.config")
 	local watched_folders = config.get("watched_folders") or {}
 
 	-- Expand ~ in filepath for comparison

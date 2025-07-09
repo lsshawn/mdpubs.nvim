@@ -1,6 +1,6 @@
-local config = require("neonote.config")
-local api = require("neonote.api")
-local utils = require("neonote.utils")
+local config = require("mdpubs.config")
+local api = require("mdpubs.api")
+local utils = require("mdpubs.utils")
 
 local M = {}
 
@@ -8,7 +8,7 @@ local M = {}
 function M.setup(opts)
 	opts = opts or {}
 	if opts.api_url == nil then
-		opts.api_url = "https://api-neonote.sshawn.com"
+		opts.api_url = "https://api.mdpubs.com"
 	end
 
 	config.setup(opts)
@@ -43,7 +43,7 @@ function M.setup_autocommands()
 			local filepath = args.file
 			utils.log("BufWritePost triggered for: " .. filepath .. " (buf: " .. args.buf .. ")")
 
-			-- Sync any .md file that has neonote frontmatter
+			-- Sync any .md file that has mdpubs frontmatter
 			M.sync_note(filepath, args.buf)
 		end,
 	})
@@ -101,27 +101,27 @@ function M.sync_note(filepath, bufnr)
 		return
 	end
 
-	-- Extract neonote ID from frontmatter
-	local note_id, has_neonote_field, body, additional_fields = utils.extract_neonote_id(content)
+	-- Extract mdpubs ID from frontmatter
+	local note_id, has_mdpubs_field, body, additional_fields = utils.extract_mdpubs_id(content)
 
 	utils.log("Sync analysis for " .. filepath .. ":")
-	utils.log("  - Has neonote field: " .. tostring(has_neonote_field))
+	utils.log("  - Has mdpubs field: " .. tostring(has_mdpubs_field))
 	utils.log("  - Note ID: " .. tostring(note_id))
 	utils.log("  - Body length: " .. #body)
 	utils.log("  - Additional fields: " .. vim.inspect(additional_fields))
 
-	-- If no neonote field exists, skip syncing
-	if not has_neonote_field then
-		utils.log("File " .. filepath .. " has no 'neonote' field in frontmatter, skipping sync")
+	-- If no mdpubs field exists, skip syncing
+	if not has_mdpubs_field then
+		utils.log("File " .. filepath .. " has no 'mdpubs' field in frontmatter, skipping sync")
 		return
 	end
 
 	-- Extract title from filename or first line
 	local title = utils.extract_title(filepath, content)
 
-	-- If neonote field exists but has no ID (empty, null, or missing), create new note
+	-- If mdpubs field exists but has no ID (empty, null, or missing), create new note
 	if not note_id then
-		utils.log("Creating new note for " .. filepath .. " (neonote field exists but no ID)")
+		utils.log("Creating new note for " .. filepath .. " (mdpubs field exists but no ID)")
 		M.create_note_from_existing_file(filepath, title, bufnr)
 		return
 	end
@@ -157,7 +157,7 @@ function M.sync_note(filepath, bufnr)
 	)
 end
 
--- Create a new note from an existing file that has neonote field but no ID
+-- Create a new note from an existing file that has mdpubs field but no ID
 function M.create_note_from_existing_file(filepath, title, bufnr)
 	utils.notify("Creating new note.\nPlease keep this buffer open...")
 
@@ -171,7 +171,7 @@ function M.create_note_from_existing_file(filepath, title, bufnr)
 	local file_extension = utils.get_file_extension(filepath)
 	-- Create note with full content. The content sent to API won't have the ID yet.
 	-- Extract additional fields from the current content for the API call
-	local _, _, _, additional_fields = utils.extract_neonote_id(current_content)
+	local _, _, _, additional_fields = utils.extract_mdpubs_id(current_content)
 	-- Find local files to upload
 	local base_dir = vim.fn.fnamemodify(filepath, ":h")
 	local files_to_upload = utils.find_local_file_paths(current_content, base_dir)
@@ -281,9 +281,9 @@ function M.refresh_current_note(version)
 		return
 	end
 
-	local note_id, has_neonote_field, _, _ = utils.extract_neonote_id(content)
-	if not has_neonote_field or not note_id then
-		utils.notify("Current file is not a synced note (no neonote ID in frontmatter)", vim.log.levels.WARN)
+	local note_id, has_mdpubs_field, _, _ = utils.extract_mdpubs_id(content)
+	if not has_mdpubs_field or not note_id then
+		utils.notify("Current file is not a synced note (no mdpubs ID in frontmatter)", vim.log.levels.WARN)
 		return
 	end
 
@@ -335,10 +335,10 @@ function M.create_from_current_buffer()
 	local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
 	local content = table.concat(lines, "\n")
 
-	-- Check if it already has a neonote ID
-	local existing_id, has_neonote_field, _, additional_fields = utils.extract_neonote_id(content)
-	if has_neonote_field and existing_id then
-		utils.notify("Current file already has a neonote ID: " .. existing_id, vim.log.levels.WARN)
+	-- Check if it already has a mdpubs ID
+	local existing_id, has_mdpubs_field, _, additional_fields = utils.extract_mdpubs_id(content)
+	if has_mdpubs_field and existing_id then
+		utils.notify("Current file already has a mdpubs ID: " .. existing_id, vim.log.levels.WARN)
 		return
 	end
 
@@ -355,7 +355,7 @@ function M.create_from_current_buffer()
 		if success and response then
 			local note_id = response.id
 
-			-- Add frontmatter with neonote ID to current content
+			-- Add frontmatter with mdpubs ID to current content
 			local updated_content = utils.add_frontmatter_id(content, note_id)
 
 			vim.schedule(function()

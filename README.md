@@ -6,7 +6,7 @@ MdPubs syncs your markdown notes from Neovim to MdPubs cloud, so your thoughts a
 
 ## Why You'll Love MdPubs
 
-- **Effortless Syncing**: Just add `neonote:` to your file's frontmatter. The plugin handles the rest, automatically syncing on save.
+- **Effortless Syncing**: Just add `mdpubs:` to your file's frontmatter. The plugin handles the rest, automatically syncing on save.
 - **Your Notes, Your Way**: No more rigid folder structures or naming conventions. Organize your markdown files however you like, anywhere on your system.
 - **Never Lose a Thought**: With bi-directional sync, your notes are always up-to-date, whether you edit them locally in Neovim.
 
@@ -20,26 +20,26 @@ Use your favorite plugin manager. With `lazy.nvim`:
 
 ```lua
 {
-  "lsshawn/neonote.nvim",
+  "lsshawn/mdpubs.nvim",
   config = function()
-    require("neonote").setup({
-      -- Get your API key from https://neonote.sshawn.com
+    require("mdpubs").setup({
+      -- Get your API key from https://mdpubs.com
       api_key = "your-api-key",
     })
   end,
 }
 ```
 
-*Don't have an account? [Sign up for MdPubs now!](https://neonote.sshawn.com)*
+*Don't have an account? [Sign up for MdPubs now!](https://mdpubs.com)*
 
 ### 2. Tag a Note for Syncing
 
-Open any markdown (`.md`) file and add `neonote:` to its YAML frontmatter. If you don't have frontmatter, just add it to the top of the file:
+Open any markdown (`.md`) file and add `mdpubs:` to its YAML frontmatter. If you don't have frontmatter, just add it to the top of the file:
 
 ```markdown
 ---
 title: "My Brilliant Idea"
-neonote:
+mdpubs:
 ---
 
 This is where the magic happens.
@@ -56,7 +56,7 @@ Your file's frontmatter will now look like this, ready for future updates:
 ```markdown
 ---
 title: "My Brilliant Idea"
-neonote: 12345
+mdpubs: 12345
 ---
 
 This is where the magic happens.
@@ -66,36 +66,36 @@ Future saves will automatically sync your changes to the cloud.
 
 ## The Magic of Frontmatter
 
-MdPubs uses a simple `neonote` key in your YAML frontmatter to manage everything.
+MdPubs uses a simple `mdpubs` key in your YAML frontmatter to manage everything.
 
-- **To create a new note**: Leave the `neonote:` key blank.
+- **To create a new note**: Leave the `mdpubs:` key blank.
   ```yaml
   ---
-  neonote:
+  mdpubs:
   ---
   ```
 - **To link an existing note**: Use the note's ID. The plugin handles this for you automatically after the first sync.
   ```yaml
   ---
-  neonote: 12345
+  mdpubs: 12345
   ---
   ```
 
 You can also include these optional fields anywhere in your frontmatter to enhance your notes:
 
-- **`neonote-tags`**: Add comma-separated tags to organize your notes
+- **`mdpubs-tags`**: Add comma-separated tags to organize your notes
   ```yaml
   ---
-  neonote: 12345
-  neonote-tags: programming, lua, vim, notes
+  mdpubs: 12345
+  mdpubs-tags: programming, lua, vim, notes
   ---
   ```
 
-- **`neonote-is-public`**: Control the visibility of your notes. Your notes can be view publicly via GET 'http://api-neonote.sshawn.com/public.notes/123456' without any API key.
+- **`mdpubs-is-public`**: Control the visibility of your notes. Your notes can be view publicly via GET 'http://api-mdpubs.com/public.notes/123456' without any API key.
   ```yaml
   ---
-  neonote: 12345
-  neonote-is-public: true
+  mdpubs: 12345
+  mdpubs-is-public: true
   ---
   ```
 
@@ -103,13 +103,13 @@ You can also include these optional fields anywhere in your frontmatter to enhan
 ```yaml
 ---
 title: "My Post"
-neonote: 12345  
-neonote-tags: project, work, important
-neonote-is-public: false
+mdpubs: 12345  
+mdpubs-tags: project, work, important
+mdpubs-is-public: false
 ---
 ```
 
-Any `.md` file *without* the `neonote:` key is simply ignored, giving you full control over what you sync.
+Any `.md` file *without* the `mdpubs:` key is simply ignored, giving you full control over what you sync.
 
 ## Commands
 
@@ -140,13 +140,13 @@ Customize MdPubs to fit your needs perfectly.
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `api_key` | string | `"https://api-neonote.sshawn.com"` | Your personal API authentication key. |
+| `api_key` | string | `"https://api-mdpubs.com"` | Your personal API authentication key. |
 | `auto_save` | boolean | `true` | Toggle automatic sync on file save. |
 | `notifications` | boolean | `true` | Show success/error notifications. |
 
 Here is an example `setup()` call with all options:
 ```lua
-require("neonote").setup({
+require("mdpubs").setup({
   api_key = "your-api-key",
   -- Enable automatic syncing on every save.
   auto_save = true,
@@ -160,7 +160,7 @@ Running into issues? Here are a few things to check first.
 
 - **File Not Syncing?**
   1. Ensure the file has a `.md` extension.
-  2. Verify the `neonote:` key is present in the frontmatter.
+  2. Verify the `mdpubs:` key is present in the frontmatter.
   3. Check `:messages` for any errors from the plugin.
   4. Test your API connection with `:MdPubsStatus`.
 
