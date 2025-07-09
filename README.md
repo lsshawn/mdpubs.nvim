@@ -1,10 +1,10 @@
-# NeoNote.nvim
+# MdPubs.nvim
 
-NeoNote syncs your markdown notes from Neovim to NeoNote cloud, so your thoughts are always safe, organized, and accessible.
+MdPubs syncs your markdown notes from Neovim to MdPubs cloud, so your thoughts are always safe, organized, and accessible.
 
 <!-- Optional: Add a cool GIF of the plugin in action here! -->
 
-## Why You'll Love NeoNote
+## Why You'll Love MdPubs
 
 - **Effortless Syncing**: Just add `neonote:` to your file's frontmatter. The plugin handles the rest, automatically syncing on save.
 - **Your Notes, Your Way**: No more rigid folder structures or naming conventions. Organize your markdown files however you like, anywhere on your system.
@@ -12,7 +12,7 @@ NeoNote syncs your markdown notes from Neovim to NeoNote cloud, so your thoughts
 
 ## Quick Start: Sync Your First Note in Minutes
 
-Get up and running with NeoNote in three simple steps.
+Get up and running with MdPubs in three simple steps.
 
 ### 1. Install the Plugin
 
@@ -30,7 +30,7 @@ Use your favorite plugin manager. With `lazy.nvim`:
 }
 ```
 
-*Don't have an account? [Sign up for NeoNote now!](https://neonote.sshawn.com)*
+*Don't have an account? [Sign up for MdPubs now!](https://neonote.sshawn.com)*
 
 ### 2. Tag a Note for Syncing
 
@@ -47,8 +47,8 @@ This is where the magic happens.
 
 ### 3. Save and Sync!
 
-Save the file (`:w`). That's it! NeoNote.nvim automatically:
-1. Creates a new note in your NeoNote account.
+Save the file (`:w`). That's it! MdPubs.nvim automatically:
+1. Creates a new note in your MdPubs account.
 2. Updates the frontmatter with the new note's unique ID.
 
 Your file's frontmatter will now look like this, ready for future updates:
@@ -66,7 +66,7 @@ Future saves will automatically sync your changes to the cloud.
 
 ## The Magic of Frontmatter
 
-NeoNote uses a simple `neonote` key in your YAML frontmatter to manage everything.
+MdPubs uses a simple `neonote` key in your YAML frontmatter to manage everything.
 
 - **To create a new note**: Leave the `neonote:` key blank.
   ```yaml
@@ -117,9 +117,9 @@ Take control of your workflow with these powerful commands:
 
 | Command | Description |
 |---------|-------------|
-| `:NeoNoteSync` | Manually sync the current file with the NeoNote cloud. |
-| `:NeoNoteRefresh` | Pull the latest version of the note from the cloud, overwriting local changes. |
-| `:NeoNoteStatus` | Check your connection to the NeoNote API. |
+| `:MdPubsSync` | Manually sync the current file with the MdPubs cloud. |
+| `:MdPubsRefresh` | Pull the latest version of the note from the cloud, overwriting local changes. |
+| `:MdPubsStatus` | Check your connection to the MdPubs API. |
 
 ### Recommended Keymaps
 
@@ -127,16 +127,16 @@ For an even smoother experience, add these keymaps to your Neovim config:
 
 ```lua
 -- Sync the current note to the cloud
-vim.keymap.set("n", "<leader>ns", ":NeoNoteSync<CR>", { desc = "NeoNote: Sync note" })
+vim.keymap.set("n", "<leader>ns", ":MdPubsSync<CR>", { desc = "MdPubs: Sync note" })
 -- Refresh the current note from the cloud
-vim.keymap.set("n", "<leader>nr", ":NeoNoteRefresh<CR>", { desc = "NeoNote: Refresh note" })
+vim.keymap.set("n", "<leader>nr", ":MdPubsRefresh<CR>", { desc = "MdPubs: Refresh note" })
 -- Check API connection status
-vim.keymap.set("n", "<leader>nt", ":NeoNoteStatus<CR>", { desc = "NeoNote: API Status" })
+vim.keymap.set("n", "<leader>nt", ":MdPubsStatus<CR>", { desc = "MdPubs: API Status" })
 ```
 
 ## Full Configuration
 
-Customize NeoNote to fit your needs perfectly.
+Customize MdPubs to fit your needs perfectly.
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
@@ -162,7 +162,7 @@ Running into issues? Here are a few things to check first.
   1. Ensure the file has a `.md` extension.
   2. Verify the `neonote:` key is present in the frontmatter.
   3. Check `:messages` for any errors from the plugin.
-  4. Test your API connection with `:NeoNoteStatus`.
+  4. Test your API connection with `:MdPubsStatus`.
 
 - **API Connection Issues?**
   1. Double-check your `api_url` and `api_key` in your config.

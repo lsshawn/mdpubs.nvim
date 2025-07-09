@@ -1,4 +1,4 @@
--- Example NeoNote.nvim configuration
+-- Example MdPubs.nvim configuration
 -- Place this in your Neovim config (init.lua or wherever you configure plugins)
 
 -- For lazy.nvim users
@@ -7,7 +7,7 @@ require("lazy").setup({
 		"lsshawn/neonote.nvim",
 		config = function()
 			require("neonote").setup({
-				-- Your NeoNote API endpoint
+				-- Your MdPubs API endpoint
 				api_url = "http://localhost:1323",
 				-- Your API key (get this from https://neonote.sshawn.com)
 				api_key = "your-64-character-api-key-here",
@@ -34,10 +34,10 @@ require("neonote").setup({
 --]]
 
 -- Example keymaps (optional)
-vim.keymap.set("n", "<leader>nn", ":NeoNoteNew<CR>", { desc = "Create new note" })
-vim.keymap.set("n", "<leader>ns", ":NeoNoteSync<CR>", { desc = "Sync current note" })
-vim.keymap.set("n", "<leader>nr", ":NeoNoteRefresh<CR>", { desc = "Refresh note from API" })
-vim.keymap.set("n", "<leader>nt", ":NeoNoteStatus<CR>", { desc = "Check API status" })
+vim.keymap.set("n", "<leader>nn", ":MdPubsNew<CR>", { desc = "Create new note" })
+vim.keymap.set("n", "<leader>ns", ":MdPubsSync<CR>", { desc = "Sync current note" })
+vim.keymap.set("n", "<leader>nr", ":MdPubsRefresh<CR>", { desc = "Refresh note from API" })
+vim.keymap.set("n", "<leader>nt", ":MdPubsStatus<CR>", { desc = "Check API status" })
 
 -- Example workflow:
 -- 1. Get your API key from 'https://neonote.sshawn.com'

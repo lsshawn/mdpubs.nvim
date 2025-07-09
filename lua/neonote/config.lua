@@ -42,7 +42,7 @@ function M.validate()
   end
   
   if #errors > 0 then
-    error("NeoNote configuration errors:\n" .. table.concat(errors, "\n"))
+    error("MdPubs configuration errors:\n" .. table.concat(errors, "\n"))
   end
 end
 

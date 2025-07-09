@@ -4,7 +4,7 @@ local M = {}
 function M.log(message)
 	local config = require("neonote.config")
 	if config.get("debug") then
-		print("[NeoNote] " .. message)
+		print("[MdPubs] " .. message)
 	end
 end
 
@@ -13,7 +13,7 @@ function M.notify(message, level)
 	local config = require("neonote.config")
 	if config.get("notifications") then
 		level = level or vim.log.levels.INFO
-		vim.notify("[NeoNote] " .. message, level)
+		vim.notify("[MdPubs] " .. message, level)
 	end
 end
 

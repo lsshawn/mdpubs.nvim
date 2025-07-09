@@ -81,7 +81,7 @@ This should be detected as having the field, but with no ID.]],
 	},
 }
 
-print("=== NeoNote Frontmatter Detection Test ===\n")
+print("=== MdPubs Frontmatter Detection Test ===\n")
 
 for i, test_case in ipairs(test_cases) do
 	print(string.format("Test %d: %s", i, test_case.name))

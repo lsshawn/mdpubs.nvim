@@ -13,7 +13,7 @@ function M.setup(opts)
 
 	config.setup(opts)
 
-	utils.log("NeoNote setup started")
+	utils.log("MdPubs setup started")
 	utils.log("Configuration: " .. vim.inspect(config.get()))
 
 	-- Setup autocommands for auto-save
@@ -27,12 +27,12 @@ function M.setup(opts)
 	-- Setup user commands
 	M.setup_commands()
 
-	utils.log("NeoNote plugin loaded successfully")
+	utils.log("MdPubs plugin loaded successfully")
 end
 
 -- Setup autocommands for auto-save functionality
 function M.setup_autocommands()
-	local group = vim.api.nvim_create_augroup("NeoNote", { clear = true })
+	local group = vim.api.nvim_create_augroup("MdPubs", { clear = true })
 
 	utils.log("Setting up autocommands for auto-save")
 
@@ -53,12 +53,12 @@ end
 
 -- Setup user commands
 function M.setup_commands()
-	vim.api.nvim_create_user_command("NeoNoteNew", function(opts)
+	vim.api.nvim_create_user_command("MdPubsNew", function(opts)
 		local title = opts.args and opts.args ~= "" and opts.args or nil
 		M.create_new_note(title)
 	end, { nargs = "?" })
 
-	vim.api.nvim_create_user_command("NeoNoteSync", function()
+	vim.api.nvim_create_user_command("MdPubsSync", function()
 		local bufnr = vim.api.nvim_get_current_buf()
 		local filepath = vim.api.nvim_buf_get_name(bufnr)
 		if filepath and filepath ~= "" then
@@ -68,20 +68,20 @@ function M.setup_commands()
 		end
 	end, {})
 
-	vim.api.nvim_create_user_command("NeoNoteRefresh", function(opts)
+	vim.api.nvim_create_user_command("MdPubsRefresh", function(opts)
 		local version = opts.args and tonumber(opts.args) or nil
 		M.refresh_current_note(version)
 	end, { nargs = "?" })
 
-	vim.api.nvim_create_user_command("NeoNoteStatus", function()
+	vim.api.nvim_create_user_command("MdPubsStatus", function()
 		M.check_status()
 	end, {})
 
-	vim.api.nvim_create_user_command("NeoNoteCreate", function()
+	vim.api.nvim_create_user_command("MdPubsCreate", function()
 		M.create_from_current_buffer()
 	end, {})
 
-	vim.api.nvim_create_user_command("NeoNoteReload", function()
+	vim.api.nvim_create_user_command("MdPubsReload", function()
 		vim.cmd("edit!")
 		utils.notify("Buffer reloaded from disk")
 	end, {})
@@ -197,7 +197,7 @@ function M.create_note_from_existing_file(filepath, title, bufnr)
 							-- The updated file belongs to the currently active buffer.
 							-- Schedule a reload.
 							vim.schedule(function()
-								vim.cmd("NeoNoteReload")
+								vim.cmd("MdPubsReload")
 							end)
 						else
 							utils.log(
