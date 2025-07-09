@@ -80,6 +80,11 @@ function M.setup_commands()
 	vim.api.nvim_create_user_command("MdPubsCreate", function()
 		M.create_from_current_buffer()
 	end, {})
+
+	vim.api.nvim_create_user_command("MdPubsReload", function()
+		vim.cmd("edit!")
+		utils.notify("Buffer reloaded from disk")
+	end, {})
 end
 
 -- Sync a note file to the API
