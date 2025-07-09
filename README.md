@@ -91,11 +91,11 @@ You can also include these optional fields anywhere in your frontmatter to enhan
   ---
   ```
 
-- **`mdpubs-is-public`**: Control the visibility of your notes. Your notes can be view publicly via GET 'http://api.mdpubs.com/public.notes/123456' without any API key.
+- **`mdpubs-is-private`**: Control the visibility of your notes. Your notes can be view publicly via GET 'http://api.mdpubs.com/notes/123456' without any API key.Default to `false`.
   ```yaml
   ---
   mdpubs: 12345
-  mdpubs-is-public: true
+  mdpubs-is-private: true
   ---
   ```
 
@@ -105,7 +105,7 @@ You can also include these optional fields anywhere in your frontmatter to enhan
 title: "My Post"
 mdpubs: 12345  
 mdpubs-tags: project, work, important
-mdpubs-is-public: false
+mdpubs-is-private: false
 ---
 ```
 
