@@ -144,48 +144,53 @@ function M.extract_mdpubs_id(content)
 	M.log("Frontmatter parsing debug:")
 	M.log("  - Raw frontmatter:\n" .. frontmatter_text)
 
-	-- Check for mdpubs field within the frontmatter
-	-- First, check if the mdpubs field exists at all (using [ \t] to avoid matching newlines)
-	local has_mdpubs_field = frontmatter_text:match('"?mdpubs"?[ \t]*:') ~= nil
-
-	-- Then, try to extract a numeric ID from it
-	local id_match = frontmatter_text:match('"?mdpubs"?[ \t]*:[ \t]*(%d+)')
 	local mdpubs_id = nil
-
-	if id_match then
-		mdpubs_id = tonumber(id_match)
-	end
-
-	-- Extract additional mdpubs fields
+	local has_mdpubs_field = false
 	local additional_fields = {}
+	local parsing_tags = false
 
-	-- Extract mdpubs-tags
-	local tags_match = frontmatter_text:match('"?mdpubs%-tags"?[ \t]*:[ \t]*([^\r\n]+)')
-	if tags_match then
-		-- Remove quotes if present
-		tags_match = tags_match:match('^"(.*)"$') or tags_match:match("^'(.*)'$") or tags_match
-		-- Split by comma and trim whitespace
-		local tags = {}
-		for tag in tags_match:gmatch("([^,]+)") do
-			tag = tag:match("^%s*(.-)%s*$") -- trim whitespace
-			if tag ~= "" then
-				table.insert(tags, tag)
-			end
+	for line in frontmatter_text:gmatch("[^\r\n]+") do
+		-- Stop parsing tags if the line is not a list item or a comment
+		if parsing_tags and not line:match("^%s*-") and not line:match("^%s*#") then
+			parsing_tags = false
 		end
-		additional_fields.tags = tags
-	end
 
-	-- Extract mdpubs_is_private
-	local is_private_match = frontmatter_text:match('"?mdpubs-is-private"?[ \t]*:[ \t]*([^\r\n]+)')
-	if is_private_match then
-		-- Remove quotes if present
-		is_private_match = is_private_match:match('^"(.*)"$') or is_private_match:match("^'(.*)'$") or is_private_match
-		-- Trim whitespace and convert to boolean
-		is_private_match = is_private_match:match("^%s*(.-)%s*$")
-		if is_private_match:lower() == "true" then
-			additional_fields.isPrivate = true
-		elseif is_private_match:lower() == "false" then
-			additional_fields.isPrivate = false
+		local key, value = line:match("^(.-):%s*(.*)$")
+		if key then
+			parsing_tags = false -- Reset tag parsing on any new key
+			key = key:match("^%s*(.-)%s*$"):match('^"(.*)"$') or key:match("^'(.*)'$") or key:match("^%s*(.-)%s*$")
+			value = value:match("^%s*(.-)%s*$") -- trim value
+
+			if key == "mdpubs" then
+				has_mdpubs_field = true
+				if value and value ~= "" then
+					mdpubs_id = tonumber(value)
+				end
+			elseif key == "mdpubs-is-private" then
+				if value:lower() == "true" then
+					additional_fields.isPrivate = true
+				elseif value:lower() == "false" then
+					additional_fields.isPrivate = false
+				end
+			elseif key == "tags" or key == "mdpubs-tags" then
+				parsing_tags = true
+				additional_fields.tags = {}
+				if value ~= "" and value ~= "[]" then -- Inline tags
+					for tag in value:gmatch("([^,]+)") do
+						local clean_tag = tag:match("^%s*(.-)%s*$")
+						if #clean_tag > 0 then
+							table.insert(additional_fields.tags, clean_tag)
+						end
+					end
+					parsing_tags = false -- Inline tags parsing is complete
+				end
+			end
+		elseif parsing_tags and line:match("^%s*-%s*(.+)") then
+			local tag = line:match("^%s*-%s*(.+)")
+			tag = tag:match("^%s*(.-)%s*$") -- trim
+			-- handle quotes
+			tag = tag:match('^"(.*)"$') or tag:match("^'(.*)'$") or tag
+			table.insert(additional_fields.tags, tag)
 		end
 	end
 

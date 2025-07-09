@@ -48,9 +48,6 @@ local function make_request(method, endpoint, data, files, callback)
 						table.insert(cmd, "--form")
 						table.insert(cmd, key .. "[]=" .. tostring(v))
 					end
-				elseif type(value) == "boolean" then
-					table.insert(cmd, "--form")
-					table.insert(cmd, key .. "=" .. tostring(value))
 				elseif value ~= nil then
 					table.insert(cmd, "--form")
 					table.insert(cmd, key .. "=" .. tostring(value))
