@@ -45,11 +45,14 @@ local function make_request(method, endpoint, data, files, callback)
 			for key, value in pairs(data) do
 				if type(value) == "table" then
 					for _, v in ipairs(value) do
-						table.insert(cmd, "--form")
+						table.insert(cmd, "--form-string")
 						table.insert(cmd, key .. "[]=" .. tostring(v))
 					end
 				elseif value ~= nil then
-					table.insert(cmd, "--form")
+					-- Use --form-string (not --form) so curl does NOT interpret
+					-- @, <, or ; in the value as file/type/filename metadata.
+					-- This matters for long markdown bodies that contain `;` etc.
+					table.insert(cmd, "--form-string")
 					table.insert(cmd, key .. "=" .. tostring(value))
 				end
 			end
