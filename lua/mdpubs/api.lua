@@ -39,35 +39,49 @@ local function make_request(method, endpoint, data, files, callback)
 	end
 
 	-- Add data for POST/PUT requests
+	local json_body_file = nil
 	if method == "POST" or method == "PUT" then
-		-- Use multipart/form-data
-		if data then
-			for key, value in pairs(data) do
-				if type(value) == "table" then
-					for _, v in ipairs(value) do
+		if has_files then
+			-- Files present: must use multipart/form-data (binary uploads).
+			if data then
+				for key, value in pairs(data) do
+					if type(value) == "table" then
+						for _, v in ipairs(value) do
+							table.insert(cmd, "--form-string")
+							table.insert(cmd, key .. "[]=" .. tostring(v))
+						end
+					elseif value ~= nil then
+						-- Use --form-string (not --form) so curl does NOT interpret
+						-- @, <, or ; in the value as file/type/filename metadata.
 						table.insert(cmd, "--form-string")
-						table.insert(cmd, key .. "[]=" .. tostring(v))
+						table.insert(cmd, key .. "=" .. tostring(value))
 					end
-				elseif value ~= nil then
-					-- Use --form-string (not --form) so curl does NOT interpret
-					-- @, <, or ; in the value as file/type/filename metadata.
-					-- This matters for long markdown bodies that contain `;` etc.
-					table.insert(cmd, "--form-string")
-					table.insert(cmd, key .. "=" .. tostring(value))
 				end
 			end
-		end
-		if has_files then
 			for key, filepath in pairs(files) do
 				-- key = original path from markdown, e.g., '../assets/image.png'
 				-- filepath = absolute path on disk
 				table.insert(cmd, "--form")
 				-- Use 'files[]' to allow multiple files and pass the original path as 'filename'.
-				-- This is more robust as some backends sanitize form field names containing paths.
 				-- The filename is quoted to handle any special characters in the path.
 				local escaped_key = key:gsub('"', '\\"')
 				table.insert(cmd, string.format('files[]=@%s;filename="%s"', filepath, escaped_key))
 			end
+		elseif data then
+			-- No files: send application/json. This is more robust than multipart
+			-- for large text bodies (some multipart parsers hang past ~10KB) and
+			-- has none of curl's @/;/< field-metadata pitfalls. The body is written
+			-- to a temp file and passed via --data-binary @file so size and special
+			-- characters are handled safely. Server stores `content` identically to
+			-- the multipart path, so markdown/frontmatter parsing is unaffected.
+			table.insert(cmd, "-H")
+			table.insert(cmd, "Content-Type: application/json")
+			json_body_file = vim.fn.tempname()
+			local fh = io.open(json_body_file, "w")
+			fh:write(vim.fn.json_encode(data))
+			fh:close()
+			table.insert(cmd, "--data-binary")
+			table.insert(cmd, "@" .. json_body_file)
 		end
 	end
 
@@ -94,6 +108,9 @@ local function make_request(method, endpoint, data, files, callback)
 		stderr_buffered = true,
 		on_exit = function(_, exit_code)
 			utils.log("Request exit code: " .. exit_code)
+			if json_body_file then
+				os.remove(json_body_file)
+			end
 		end,
 		on_stdout = function(_, data_lines)
 			local response_text = table.concat(data_lines, "\n")

@@ -246,6 +246,42 @@ function M.add_frontmatter_id(content, note_id)
 	return frontmatter .. content
 end
 
+-- Comment out the `mdpubs:` line in the frontmatter (after a delete) AND clear its
+-- id value, so the file is no longer synced but the user can uncomment to
+-- re-publish as a NEW note (the old id is dead once deleted). Turns
+--   mdpubs: 296   ->   # mdpubs:
+-- Only touches the frontmatter block and only an active (non-commented) line.
+-- Returns the new content and whether a change was made.
+function M.comment_out_frontmatter_id(content)
+	local start_marker = "---\n"
+	local end_marker = "\n---\n"
+
+	if not content:match("^" .. start_marker) then
+		return content, false
+	end
+	local fm_end_pos = content:find(end_marker, #start_marker + 1, true)
+	if not fm_end_pos then
+		return content, false
+	end
+
+	local frontmatter_part = content:sub(1, fm_end_pos + #end_marker - 1)
+	local body_part = content:sub(fm_end_pos + #end_marker)
+
+	-- Match an uncommented mdpubs line: capture the leading newline, indent, and the
+	-- key up to and including the colon; drop whatever value followed. Emitting just
+	-- `# mdpubs:` clears the id so a later uncomment creates a fresh note.
+	local new_frontmatter_part, count = frontmatter_part:gsub(
+		"(\n)([ \t]*)(\"?mdpubs\"?[ \t]*:)[^\r\n]*",
+		"%1%2# %3",
+		1
+	)
+
+	if count > 0 then
+		return new_frontmatter_part .. body_part, true
+	end
+	return content, false
+end
+
 -- Extract note ID from filename (legacy support)
 function M.extract_note_id(filepath)
 	local filename = vim.fn.fnamemodify(filepath, ":t:r") -- Get filename without extension
@@ -356,6 +392,20 @@ function M.parse_error_response(response)
 		return response
 	end
 	return "Unknown error"
+end
+
+-- Does an error response mean the note no longer exists / isn't ours? The API
+-- returns "Note not found or doesn't belong to you" (404) in that case. Used to
+-- treat a delete of an already-gone note as success (clean up the local file).
+function M.is_note_gone_error(response)
+	local msg = M.parse_error_response(response)
+	if type(msg) ~= "string" then
+		return false
+	end
+	msg = msg:lower()
+	return msg:find("not found", 1, true) ~= nil
+		or msg:find("doesn't belong to you", 1, true) ~= nil
+		or msg:find("does not belong to you", 1, true) ~= nil
 end
 
 return M

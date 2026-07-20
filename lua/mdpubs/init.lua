@@ -85,6 +85,10 @@ function M.setup_commands()
 		vim.cmd("edit!")
 		utils.notify("Buffer reloaded from disk")
 	end, {})
+
+	vim.api.nvim_create_user_command("MdPubsDelete", function(opts)
+		M.delete_current_note(opts.bang)
+	end, { bang = true })
 end
 
 -- Sync a note file to the API
@@ -374,6 +378,88 @@ function M.create_from_current_buffer()
 			utils.log("Failed: " .. (response or "Unknown error"))
 		end
 	end)
+end
+
+-- Delete the current note from the API, then comment out the `mdpubs:` line in
+-- the frontmatter so the file stays local and un-synced (uncomment to re-publish).
+-- Pass bang=true (`:MdPubsDelete!`) to skip the confirmation prompt.
+function M.delete_current_note(skip_confirm)
+	local bufnr = vim.api.nvim_get_current_buf()
+	local filepath = vim.api.nvim_buf_get_name(bufnr)
+	if not filepath or filepath == "" then
+		utils.notify("No file open", vim.log.levels.WARN)
+		return
+	end
+
+	-- Read from the buffer (may have unsaved edits) so we operate on what the user sees.
+	local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+	local content = table.concat(lines, "\n")
+
+	local note_id, has_mdpubs_field = utils.extract_mdpubs_id(content)
+	if not has_mdpubs_field or not note_id then
+		utils.notify("Current file is not a synced note (no mdpubs ID in frontmatter)", vim.log.levels.WARN)
+		return
+	end
+
+	-- Comment out the mdpubs id line so the file is no longer synced, but the user
+	-- can uncomment to re-publish later. `prefix` tailors the notification.
+	local function clear_frontmatter_id(prefix)
+		local current_lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+		local current_content = table.concat(current_lines, "\n")
+		local updated_content, changed = utils.comment_out_frontmatter_id(current_content)
+
+		if changed then
+			local updated_lines = vim.split(updated_content, "\n")
+			vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, updated_lines)
+			vim.api.nvim_buf_set_option(bufnr, "modified", true)
+			utils.notify(
+				prefix .. " Commented out `mdpubs:` in frontmatter — save to persist, uncomment to re-publish."
+			)
+		else
+			utils.notify(prefix .. " (could not update frontmatter)", vim.log.levels.WARN)
+		end
+	end
+
+	local function do_delete()
+		utils.notify("Deleting note ID " .. note_id .. "...")
+		api.delete_note(note_id, function(success, response)
+			vim.schedule(function()
+				if success then
+					utils.log("Deleted note ID " .. note_id)
+					clear_frontmatter_id("Deleted note " .. note_id .. ".")
+					return
+				end
+
+				-- The note may have been deleted manually on the platform already —
+				-- the API returns not-found / not-owned. Treat that as "already gone"
+				-- and still clean up the local frontmatter rather than erroring.
+				if utils.is_note_gone_error(response) then
+					utils.log("Note ID " .. note_id .. " already gone on server; clearing frontmatter")
+					clear_frontmatter_id("Note " .. note_id .. " was already deleted on mdpubs.")
+					return
+				end
+
+				utils.notify(
+					"Failed to delete note ID " .. note_id .. ":\n" .. utils.parse_error_response(response),
+					vim.log.levels.ERROR
+				)
+				utils.log("Failed to delete note ID " .. note_id .. ": " .. tostring(response))
+			end)
+		end)
+	end
+
+	if skip_confirm then
+		do_delete()
+		return
+	end
+
+	-- Confirm — deletion is destructive and outward-facing.
+	local choice = vim.fn.confirm("Delete published note " .. note_id .. " from mdpubs?", "&Yes\n&No", 2)
+	if choice == 1 then
+		do_delete()
+	else
+		utils.notify("Delete cancelled")
+	end
 end
 
 -- Check API status

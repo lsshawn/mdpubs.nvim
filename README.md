@@ -119,6 +119,8 @@ Take control of your workflow with these powerful commands:
 |---------|-------------|
 | `:MdPubsSync` | Manually sync the current file with the MdPubs cloud. |
 | `:MdPubsRefresh` | Pull the latest version of the note from the cloud, overwriting local changes. |
+| `:MdPubsCreate` | Publish the current buffer as a new note and add the `mdpubs` frontmatter. |
+| `:MdPubsDelete` | Delete the current note from the cloud. Prompts to confirm, then **comments out** the `mdpubs:` line in the frontmatter so the file stays local — uncomment it to re-publish. Use `:MdPubsDelete!` to skip the confirmation. |
 | `:MdPubsStatus` | Check your connection to the MdPubs API. |
 
 ### Recommended Keymaps
@@ -130,6 +132,8 @@ For an even smoother experience, add these keymaps to your Neovim config:
 vim.keymap.set("n", "<leader>ns", ":MdPubsSync<CR>", { desc = "MdPubs: Sync note" })
 -- Refresh the current note from the cloud
 vim.keymap.set("n", "<leader>nr", ":MdPubsRefresh<CR>", { desc = "MdPubs: Refresh note" })
+-- Delete the current note from the cloud
+vim.keymap.set("n", "<leader>nd", ":MdPubsDelete<CR>", { desc = "MdPubs: Delete note" })
 -- Check API connection status
 vim.keymap.set("n", "<leader>nt", ":MdPubsStatus<CR>", { desc = "MdPubs: API Status" })
 ```
