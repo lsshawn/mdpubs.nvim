@@ -164,7 +164,12 @@ function M.extract_mdpubs_id(content)
 			if key == "mdpubs" then
 				has_mdpubs_field = true
 				if value and value ~= "" then
-					mdpubs_id = tonumber(value)
+					-- The id is the note's publicId (an unguessable nanoid, e.g.
+					-- "V1StGXR8_Z5"). It is alphanumeric, so keep it as a STRING —
+					-- do NOT tonumber() it (that would drop it to nil and cause a
+					-- duplicate note to be created). Legacy integer ids are also
+					-- valid strings here and the API accepts them during transition.
+					mdpubs_id = value
 				end
 			elseif key == "mdpubs-is-private" then
 				if value:lower() == "true" then

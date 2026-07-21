@@ -150,6 +150,25 @@ function M.sync_note(filepath, bufnr)
 			if success then
 				utils.notify("Note ID " .. note_id .. " synced successfully")
 				utils.log("Note ID " .. note_id .. " synced successfully")
+
+				-- Transition bridge: if this file still carries a legacy id (the
+				-- API resolved it but the frontmatter differs from the canonical
+				-- publicId), re-stamp the file so future syncs use the publicId and
+				-- the enumerable integer id disappears from disk.
+				if type(response) == "table" and response.publicId and tostring(note_id) ~= tostring(response.publicId) then
+					local latest = utils.read_file(filepath)
+					if latest then
+						local restamped = utils.update_frontmatter_id(latest, response.publicId)
+						if utils.write_file(filepath, restamped) then
+							utils.log("Re-stamped " .. filepath .. " from " .. tostring(note_id) .. " to publicId " .. response.publicId)
+							if bufnr and bufnr == vim.api.nvim_get_current_buf() then
+								vim.schedule(function()
+									vim.cmd("MdPubsReload")
+								end)
+							end
+						end
+					end
+				end
 			else
 				utils.notify(
 					"Failed to sync note ID " .. note_id .. ":\n" .. (response or "Unknown error"),
@@ -187,7 +206,10 @@ function M.create_note_from_existing_file(filepath, title, bufnr)
 		files_to_upload,
 		function(success, response)
 			if success and response then
-				local note_id = response.id
+				-- Stamp the unguessable publicId (not the enumerable integer id) into
+				-- frontmatter. Fall back to response.id only if an older API build
+				-- doesn't return publicId.
+				local note_id = response.publicId or response.id
 				utils.log("Created new note with ID " .. note_id .. " for " .. filepath)
 
 				-- Update the frontmatter with the new note ID
@@ -235,7 +257,8 @@ function M.create_new_note(title)
 	local file_extension = "md" -- New notes are always markdown
 	api.create_note(default_title, body_content, file_extension, {}, function(success, response)
 		if success and response then
-			local note_id = response.id
+			-- Stamp the unguessable publicId, not the enumerable integer id.
+			local note_id = response.publicId or response.id
 			local watched_folders = config.get("watched_folders")
 
 			if #watched_folders == 0 then
@@ -357,7 +380,8 @@ function M.create_from_current_buffer()
 	local file_extension = utils.get_file_extension(filepath)
 	api.create_note(title, content, file_extension, additional_fields, files_to_upload, function(success, response)
 		if success and response then
-			local note_id = response.id
+			-- Stamp the unguessable publicId, not the enumerable integer id.
+			local note_id = response.publicId or response.id
 
 			-- Add frontmatter with mdpubs ID to current content
 			local updated_content = utils.add_frontmatter_id(content, note_id)
