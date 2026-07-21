@@ -89,6 +89,27 @@ function M.setup_commands()
 	vim.api.nvim_create_user_command("MdPubsDelete", function(opts)
 		M.delete_current_note(opts.bang)
 	end, { bang = true })
+
+	vim.api.nvim_create_user_command("MdPubsOpen", function()
+		M.open_current_note()
+	end, {})
+
+	M.setup_keymaps()
+end
+
+-- Buffer-local keymaps for markdown files (so <leader>m* only binds where notes
+-- live, and never shadows the user's global <leader>m elsewhere).
+function M.setup_keymaps()
+	vim.api.nvim_create_autocmd("FileType", {
+		group = vim.api.nvim_create_augroup("MdPubsKeymaps", { clear = true }),
+		pattern = "markdown",
+		callback = function(args)
+			vim.keymap.set("n", "<leader>mo", M.open_current_note, {
+				buffer = args.buf,
+				desc = "MdPubs: open current note in browser",
+			})
+		end,
+	})
 end
 
 -- Sync a note file to the API
@@ -387,6 +408,43 @@ end
 
 -- Delete the current note from the API, then comment out the `mdpubs:` line in
 -- the frontmatter so the file stays local and un-synced (uncomment to re-publish).
+-- Open the current note's public page in the browser.
+function M.open_current_note()
+	local bufnr = vim.api.nvim_get_current_buf()
+	local filepath = vim.api.nvim_buf_get_name(bufnr)
+	if not filepath or filepath == "" then
+		utils.notify("No file open", vim.log.levels.WARN)
+		return
+	end
+
+	-- Read from the buffer so unsaved edits (e.g. a just-added id) are honoured.
+	local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+	local content = table.concat(lines, "\n")
+
+	local note_id, has_mdpubs_field = utils.extract_mdpubs_id(content)
+	if not has_mdpubs_field or not note_id then
+		utils.notify(
+			"Current file is not a published note yet (no mdpubs id). Sync it first.",
+			vim.log.levels.WARN
+		)
+		return
+	end
+
+	local url = config.get_public_url() .. "/" .. note_id
+	utils.notify("Opening " .. url)
+
+	-- vim.ui.open (Neovim 0.10+) picks the right platform opener; fall back to
+	-- xdg-open / open / start for older versions.
+	if vim.ui and vim.ui.open then
+		vim.ui.open(url)
+	else
+		local opener = (vim.fn.has("mac") == 1 and "open")
+			or (vim.fn.has("win32") == 1 and "start")
+			or "xdg-open"
+		vim.fn.jobstart({ opener, url }, { detach = true })
+	end
+end
+
 -- Pass bang=true (`:MdPubsDelete!`) to skip the confirmation prompt.
 function M.delete_current_note(skip_confirm)
 	local bufnr = vim.api.nvim_get_current_buf()

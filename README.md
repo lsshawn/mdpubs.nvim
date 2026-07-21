@@ -120,12 +120,14 @@ Take control of your workflow with these powerful commands:
 | `:MdPubsSync` | Manually sync the current file with the MdPubs cloud. |
 | `:MdPubsRefresh` | Pull the latest version of the note from the cloud, overwriting local changes. |
 | `:MdPubsCreate` | Publish the current buffer as a new note and add the `mdpubs` frontmatter. |
+| `:MdPubsOpen` | Open the current note's public page in your browser. Bound to `<leader>mo` in markdown buffers by default. |
 | `:MdPubsDelete` | Delete the current note from the cloud. Prompts to confirm, then **comments out** the `mdpubs:` line in the frontmatter so the file stays local — uncomment it to re-publish. Use `:MdPubsDelete!` to skip the confirmation. |
 | `:MdPubsStatus` | Check your connection to the MdPubs API. |
 
 ### Recommended Keymaps
 
-For an even smoother experience, add these keymaps to your Neovim config:
+`<leader>mo` (open the current note in the browser) is set automatically in
+markdown buffers. For the rest, add these keymaps to your Neovim config:
 
 ```lua
 -- Sync the current note to the cloud
@@ -145,6 +147,7 @@ Customize MdPubs to fit your needs perfectly.
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `api_key` | string | `"https://api.mdpubs.com"` | Your personal API authentication key. |
+| `public_url` | string | derived from `api_url` | Public viewer base for `:MdPubsOpen` (e.g. `https://mdpubs.com`). Defaults to `api_url` with the leading `api.` removed; override for custom domains. |
 | `auto_save` | boolean | `true` | Toggle automatic sync on file save. |
 | `notifications` | boolean | `true` | Show success/error notifications. |
 
