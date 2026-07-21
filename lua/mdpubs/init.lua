@@ -150,25 +150,6 @@ function M.sync_note(filepath, bufnr)
 			if success then
 				utils.notify("Note ID " .. note_id .. " synced successfully")
 				utils.log("Note ID " .. note_id .. " synced successfully")
-
-				-- Transition bridge: if this file still carries a legacy id (the
-				-- API resolved it but the frontmatter differs from the canonical
-				-- publicId), re-stamp the file so future syncs use the publicId and
-				-- the enumerable integer id disappears from disk.
-				if type(response) == "table" and response.publicId and tostring(note_id) ~= tostring(response.publicId) then
-					local latest = utils.read_file(filepath)
-					if latest then
-						local restamped = utils.update_frontmatter_id(latest, response.publicId)
-						if utils.write_file(filepath, restamped) then
-							utils.log("Re-stamped " .. filepath .. " from " .. tostring(note_id) .. " to publicId " .. response.publicId)
-							if bufnr and bufnr == vim.api.nvim_get_current_buf() then
-								vim.schedule(function()
-									vim.cmd("MdPubsReload")
-								end)
-							end
-						end
-					end
-				end
 			else
 				utils.notify(
 					"Failed to sync note ID " .. note_id .. ":\n" .. (response or "Unknown error"),
