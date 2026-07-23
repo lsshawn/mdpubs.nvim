@@ -8,7 +8,9 @@ local M = {}
 function M.setup(opts)
 	opts = opts or {}
 	if opts.api_url == nil then
-		opts.api_url = "https://api.mdpubs.com"
+		-- API is now served same-origin by the mdpubs web app under /api
+		-- (migrated off the standalone api.mdpubs.com service).
+		opts.api_url = "https://mdpubs.com/api"
 	end
 
 	config.setup(opts)
