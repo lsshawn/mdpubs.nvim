@@ -251,6 +251,47 @@ function M.add_frontmatter_id(content, note_id)
 	return frontmatter .. content
 end
 
+-- Set (insert or replace) the `mdpubs-account:` line in the frontmatter.
+--   slug given  -> ensure `mdpubs-account: <slug>` is present.
+--   slug nil/"" -> remove any existing `mdpubs-account:` line (revert to default).
+-- Creates a frontmatter block if none exists. Only the frontmatter is touched;
+-- the body is never modified. Returns new content and whether a change was made.
+function M.set_frontmatter_account(content, slug)
+	slug = slug and slug:match("^%s*(.-)%s*$") or nil
+	local line = slug and slug ~= "" and ("mdpubs-account: " .. slug) or nil
+
+	local start_marker = "---\n"
+	local end_marker = "\n---\n"
+
+	-- No frontmatter yet: create one (only when we actually have a slug to set).
+	if not content:match("^" .. start_marker) then
+		if not line then return content, false end
+		return "---\n" .. line .. "\n---\n" .. content, true
+	end
+
+	local fm_end_pos = content:find(end_marker, #start_marker + 1, true)
+	if not fm_end_pos then
+		return content, false -- malformed; leave alone
+	end
+
+	local fm = content:sub(1, fm_end_pos + #end_marker - 1)
+	local body = content:sub(fm_end_pos + #end_marker)
+
+	-- Remove any existing account line first, consuming the whole line INCLUDING
+	-- its trailing newline so no blank line is left behind. (The frontmatter block
+	-- always starts with "---\n", so the account line always has a preceding
+	-- newline to anchor on.)
+	local stripped, removed = fm:gsub("\n[ \t]*\"?mdpubs%-account\"?[ \t]*:[^\r\n]*", "")
+
+	if not line then
+		return (removed > 0) and (stripped .. body) or content, removed > 0
+	end
+
+	-- Insert the account line just before the closing `---`.
+	local with_line = stripped:gsub("(\n%-%-%-\n)$", "\n" .. line .. "%1", 1)
+	return with_line .. body, true
+end
+
 -- Comment out the `mdpubs:` line in the frontmatter (after a delete) AND clear its
 -- id value, so the file is no longer synced but the user can uncomment to
 -- re-publish as a NEW note (the old id is dead once deleted). Turns

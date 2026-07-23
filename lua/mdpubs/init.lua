@@ -94,7 +94,49 @@ function M.setup_commands()
 		M.open_current_note()
 	end, {})
 
+	-- Set/clear the `mdpubs-account:` frontmatter for the current buffer.
+	--   :MdPubsAccount 108labs   -> publish this note under the 108labs org
+	--   :MdPubsAccount none      -> force a personal note
+	--   :MdPubsAccount           -> remove the line (falls back to your default)
+	vim.api.nvim_create_user_command("MdPubsAccount", function(opts)
+		M.set_current_account(opts.args)
+	end, { nargs = "?" })
+
 	M.setup_keymaps()
+end
+
+-- Insert/replace/remove the mdpubs-account frontmatter line in the current
+-- buffer. Editing the buffer (not the file) keeps it undoable and lets the
+-- user review before writing. An empty slug removes the line.
+function M.set_current_account(slug)
+	local bufnr = vim.api.nvim_get_current_buf()
+
+	-- No explicit arg: try to fill in from folder_accounts/default_account for
+	-- this file's path. If nothing is configured, fall through to removing the
+	-- line (revert to the server-side account default).
+	if not slug or not slug:match("%S") then
+		local filepath = vim.api.nvim_buf_get_name(bufnr)
+		local resolved = require("mdpubs.config").get_account_for_path(filepath)
+		if resolved and resolved:match("%S") then
+			slug = resolved
+		end
+	end
+
+	local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+	local content = table.concat(lines, "\n")
+
+	local new_content, changed = utils.set_frontmatter_account(content, slug)
+	if not changed then
+		utils.notify("No change to mdpubs-account", vim.log.levels.INFO)
+		return
+	end
+
+	vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, vim.split(new_content, "\n", { plain = true }))
+	if slug and slug:match("%S") then
+		utils.notify("mdpubs-account set to '" .. slug .. "'")
+	else
+		utils.notify("mdpubs-account removed (using account default)")
+	end
 end
 
 -- Buffer-local keymaps for markdown files (so <leader>m* only binds where notes
