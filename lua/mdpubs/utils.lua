@@ -251,14 +251,14 @@ function M.add_frontmatter_id(content, note_id)
 	return frontmatter .. content
 end
 
--- Set (insert or replace) the `mdpubs-account:` line in the frontmatter.
---   slug given  -> ensure `mdpubs-account: <slug>` is present.
---   slug nil/"" -> remove any existing `mdpubs-account:` line (revert to default).
+-- Set (insert or replace) the `mdpubs-company:` line in the frontmatter.
+--   slug given  -> ensure `mdpubs-company: <slug>` is present.
+--   slug nil/"" -> remove any existing `mdpubs-company:` line (revert to default).
 -- Creates a frontmatter block if none exists. Only the frontmatter is touched;
 -- the body is never modified. Returns new content and whether a change was made.
-function M.set_frontmatter_account(content, slug)
+function M.set_frontmatter_company(content, slug)
 	slug = slug and slug:match("^%s*(.-)%s*$") or nil
-	local line = slug and slug ~= "" and ("mdpubs-account: " .. slug) or nil
+	local line = slug and slug ~= "" and ("mdpubs-company: " .. slug) or nil
 
 	local start_marker = "---\n"
 	local end_marker = "\n---\n"
@@ -277,17 +277,17 @@ function M.set_frontmatter_account(content, slug)
 	local fm = content:sub(1, fm_end_pos + #end_marker - 1)
 	local body = content:sub(fm_end_pos + #end_marker)
 
-	-- Remove any existing account line first, consuming the whole line INCLUDING
+	-- Remove any existing company line first, consuming the whole line INCLUDING
 	-- its trailing newline so no blank line is left behind. (The frontmatter block
-	-- always starts with "---\n", so the account line always has a preceding
+	-- always starts with "---\n", so the company line always has a preceding
 	-- newline to anchor on.)
-	local stripped, removed = fm:gsub("\n[ \t]*\"?mdpubs%-account\"?[ \t]*:[^\r\n]*", "")
+	local stripped, removed = fm:gsub("\n[ \t]*\"?mdpubs%-company\"?[ \t]*:[^\r\n]*", "")
 
 	if not line then
 		return (removed > 0) and (stripped .. body) or content, removed > 0
 	end
 
-	-- Insert the account line just before the closing `---`.
+	-- Insert the company line just before the closing `---`.
 	local with_line = stripped:gsub("(\n%-%-%-\n)$", "\n" .. line .. "%1", 1)
 	return with_line .. body, true
 end

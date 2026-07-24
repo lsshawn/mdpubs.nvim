@@ -14,24 +14,24 @@ local default_config = {
   auto_save = true,
   notifications = true,
   debug = false,
-  -- Org publishing (mdpubs-account). A note is published under an org via
-  -- `mdpubs-account: <slug>` frontmatter; that org can have a custom domain
+  -- Org publishing (mdpubs-company). A note is published under an org via
+  -- `mdpubs-company: <slug>` frontmatter; that org can have a custom domain
   -- (e.g. docs.108labs.ai). Resolution is server-side and precedence is:
-  --   frontmatter `mdpubs-account:`  ->  your account default  ->  personal.
+  --   frontmatter `mdpubs-company:`  ->  your company default  ->  personal.
   --
   -- Most users set a default in the mdpubs web UI and write nothing here. These
   -- options only help you AUTO-INSERT the frontmatter locally when it's missing:
   --
-  --   default_account : slug to use for new notes that have no mdpubs-account.
-  --   folder_accounts : map of path prefix -> slug, e.g.
+  --   default_company : slug to use for new notes that have no mdpubs-company.
+  --   folder_companies : map of path prefix -> slug, e.g.
   --                     { ["~/notes/108labs"] = "108labs", ["~/acme"] = "acme" }
-  --                     A matching prefix wins over default_account. Use the
+  --                     A matching prefix wins over default_company. Use the
   --                     value "none" to force a personal note under a path.
   --
-  -- Leave both nil to never touch account frontmatter (recommended if you rely
-  -- on the server-side account default).
-  default_account = nil,
-  folder_accounts = nil,
+  -- Leave both nil to never touch company frontmatter (recommended if you rely
+  -- on the server-side company default).
+  default_company = nil,
+  folder_companies = nil,
 }
 
 -- Current configuration
@@ -106,20 +106,20 @@ function M.get_public_url()
   return base
 end
 
--- Resolve the mdpubs-account slug to use for a file at `path`, based on
--- folder_accounts (longest matching prefix wins) then default_account. Returns
--- nil when neither is configured (leave account frontmatter untouched). Paths
+-- Resolve the mdpubs-company slug to use for a file at `path`, based on
+-- folder_companies (longest matching prefix wins) then default_company. Returns
+-- nil when neither is configured (leave company frontmatter untouched). Paths
 -- and prefixes are expanded (~ -> $HOME) and normalised before comparison.
-function M.get_account_for_path(path)
+function M.get_company_for_path(path)
   local function expand(p)
     if not p or p == "" then return nil end
     return vim.fn.fnamemodify(vim.fn.expand(p), ":p"):gsub("/$", "")
   end
 
   local file = expand(path)
-  if file and type(config.folder_accounts) == "table" then
+  if file and type(config.folder_companies) == "table" then
     local best_len, best_slug = -1, nil
-    for prefix, slug in pairs(config.folder_accounts) do
+    for prefix, slug in pairs(config.folder_companies) do
       local ep = expand(prefix)
       if ep and (file == ep or file:sub(1, #ep + 1) == ep .. "/") and #ep > best_len then
         best_len, best_slug = #ep, slug
@@ -128,7 +128,7 @@ function M.get_account_for_path(path)
     if best_slug then return best_slug end
   end
 
-  return config.default_account
+  return config.default_company
 end
 
 -- Get API headers

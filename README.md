@@ -122,47 +122,47 @@ Take control of your workflow with these powerful commands:
 | `:MdPubsCreate` | Publish the current buffer as a new note and add the `mdpubs` frontmatter. |
 | `:MdPubsOpen` | Open the current note's public page in your browser. Bound to `<leader>mo` in markdown buffers by default. |
 | `:MdPubsDelete` | Delete the current note from the cloud. Prompts to confirm, then **comments out** the `mdpubs:` line in the frontmatter so the file stays local — uncomment it to re-publish. Use `:MdPubsDelete!` to skip the confirmation. |
-| `:MdPubsAccount [slug]` | Set the `mdpubs-account:` frontmatter for the current note (see [Publishing under an account](#publishing-under-an-account-org--custom-domain)). `:MdPubsAccount 108labs` publishes under that org; `:MdPubsAccount none` forces a personal note; `:MdPubsAccount` with no argument removes the line so it falls back to your account default. |
+| `:MdPubsCompany [slug]` | Set the `mdpubs-company:` frontmatter for the current note (see [Publishing under a company](#publishing-under-a-company-org--custom-domain)). `:MdPubsCompany 108labs` publishes under that org; `:MdPubsCompany none` forces a personal note; `:MdPubsCompany` with no argument removes the line so it falls back to your company default. |
 | `:MdPubsStatus` | Check your connection to the MdPubs API. |
 
-## Publishing under an account (org / custom domain)
+## Publishing under a company (org / custom domain)
 
-If you belong to an MdPubs **account** (organization), you can publish notes under
-it — and that account can have its own custom domain, e.g. `docs.108labs.ai`.
+If you belong to an MdPubs **company** (organization), you can publish notes under
+it — and that company can have its own custom domain, e.g. `docs.108labs.ai`.
 
-Which account a note belongs to is decided in this order:
+Which company a note belongs to is decided in this order:
 
-1. **`mdpubs-account:` frontmatter** in the note (explicit, per-file):
+1. **`mdpubs-company:` frontmatter** in the note (explicit, per-file):
    ```yaml
    ---
    mdpubs: V1StGXR8_Z5
-   mdpubs-account: 108labs
+   mdpubs-company: 108labs
    ---
    ```
-2. **Your account default** (set once in the MdPubs web UI) — used when a note
-   has no `mdpubs-account`. Most single-company users just set this and never
+2. **Your company default** (set once in the MdPubs web UI) — used when a note
+   has no `mdpubs-company`. Most single-company users just set this and never
    touch frontmatter.
-3. **Personal** — no account, if neither of the above applies. Use
-   `mdpubs-account: none` to force a note personal even when you have a default.
+3. **Personal** — no company, if neither of the above applies. Use
+   `mdpubs-company: none` to force a note personal even when you have a default.
 
-You must be a member of the account you name, or the sync is rejected.
+You must be a member of the company you name, or the sync is rejected.
 
 ### Writing for multiple companies
 
-Just set `mdpubs-account:` per file — one line switches which company (and which
-custom domain) a note publishes to. To automate it, point folders at accounts:
+Just set `mdpubs-company:` per file — one line switches which company (and which
+custom domain) a note publishes to. To automate it, point folders at companies:
 
 ```lua
 require("mdpubs").setup({
-  folder_accounts = {
+  folder_companies = {
     ["~/notes/108labs"] = "108labs",  -- notes here default to 108labs
     ["~/notes/acme"]    = "acme",
   },
-  default_account = nil, -- optional fallback for everything else
+  default_company = nil, -- optional fallback for everything else
 })
 ```
 
-Then `:MdPubsAccount` with no argument fills in the account for the current file
+Then `:MdPubsCompany` with no argument fills in the company for the current file
 based on its folder. (These options only help you *insert* the frontmatter
 locally; resolution itself always happens server-side.)
 
