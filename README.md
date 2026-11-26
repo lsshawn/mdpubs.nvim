@@ -99,6 +99,18 @@ You can also include these optional fields anywhere in your frontmatter to enhan
   ---
   ```
 
+- **`mdpubs-comments`**: Let readers comment in the margin of the published note. They click any line (or select a few words) and write beside it. `public` lets anyone with the link comment, giving a name; `true` limits it to signed-in MdPubs users. Leave it out for no comments.
+  ```yaml
+  ---
+  mdpubs: 12345
+  mdpubs-comments: public
+  ---
+  ```
+
+- **`mdpubs-comments-email`**: The email field guests see when commenting: `optional` (default), `required` or `off`. Only you see the addresses.
+
+  Comments are kept on the server, not in your file, and they follow their text when you edit and sync again. Open the note in a browser while logged in to resolve or delete them.
+
 **Complete example** with all optional fields:
 ```yaml
 ---
@@ -106,6 +118,8 @@ title: "My Post"
 mdpubs: 12345  
 mdpubs-tags: project, work, important
 mdpubs-is-private: false
+mdpubs-comments: public
+mdpubs-comments-email: optional
 ---
 ```
 
