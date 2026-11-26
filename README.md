@@ -111,6 +111,14 @@ You can also include these optional fields anywhere in your frontmatter to enhan
 
   Comments are kept on the server, not in your file, and they follow their text when you edit and sync again. Open the note in a browser while logged in to resolve or delete them.
 
+- **`mdpubs-history`**: Every sync saves a version. Set this to `public` and readers get a clock button showing what changed between versions, paragraph by paragraph, with new words in green and removed words struck through. Without it only you see the button when logged in.
+  ```yaml
+  ---
+  mdpubs: 12345
+  mdpubs-history: public
+  ---
+  ```
+
 **Complete example** with all optional fields:
 ```yaml
 ---
@@ -120,6 +128,7 @@ mdpubs-tags: project, work, important
 mdpubs-is-private: false
 mdpubs-comments: public
 mdpubs-comments-email: optional
+mdpubs-history: public
 ---
 ```
 
